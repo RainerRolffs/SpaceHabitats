@@ -1,6 +1,9 @@
 A Physical Model of the Energy Flow in Space Habitats
 by Rainer Rolffs
 
+Accompanying paper published in the NSS Space Settlement Journal (https://space.nss.org/national-space-society-space-settlement-journal/)
+under https://space.nss.org/wp-content/uploads/NSS-JOURNAL-Energy-Flow-in-Space-Habitats.pdf
+
 Requires python 3.8 or newer, with matplotlib, os, math, enum
 
 Usage:
