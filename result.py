@@ -3,35 +3,38 @@
 import math
 
 import helpers
-import input
+from input import Input
 
 
 class Result:
 
-    def __init__(self, habPower, absFriction, conFriction, emFriction):
+    def __init__(self, inp: Input, habPower, absFriction, conFriction, emFriction):
+        self.inp = inp
+        self.computeGeneral()
+
         self.habPower = habPower
         self.absFriction = absFriction
         self.conFriction = conFriction
         self.emFriction = emFriction
 
-        self.habVolume = self.habPower / input.powerPerVolume
-        self.habRadius = (self.habVolume / input.aspectRatio / math.pi) ** (1 / 3)
-        self.hullSurface = (2 + 2 * input.aspectRatio) * math.pi * self.habRadius ** 2
-        self.hullMass = self.hullSurface * input.hullSurfaceDensity
-        self.hullVolume = self.hullSurface * (input.hullSurfaceDensity / input.hullDensity + input.gapThickness)
-        self.interiorMass = self.habPower * input.interiorMassPerPower
+        self.habVolume = self.habPower / self.inp.powerPerVolume
+        self.habRadius = (self.habVolume / self.inp.aspectRatio / math.pi) ** (1 / 3)
+        self.hullSurface = (2 + 2 * self.inp.aspectRatio) * math.pi * self.habRadius ** 2
+        self.hullMass = self.hullSurface * self.inp.hullSurfaceDensity
+        self.hullVolume = self.hullSurface * (self.inp.hullSurfaceDensity / self.inp.hullDensity + self.inp.gapThickness)
+        self.interiorMass = self.habPower * self.inp.interiorMassPerPower
 
-        self.electricFraction = input.electricFraction
+        self.electricFraction = self.inp.electricFraction
         self.computeLightCollection()
-        self.isCompleteLighting = (self.lightVolume < input.maxLightVolumeFraction * self.habVolume) \
+        self.isCompleteLighting = (self.lightVolume < self.inp.maxLightVolumeFraction * self.habVolume) \
             and (self.windowArea < self.hullSurface)
         if not self.isCompleteLighting:
-            self.electricFraction = 1 - (1 - input.electricFraction) * min(
-                (input.maxLightVolumeFraction * self.habVolume) / self.lightVolume,
+            self.electricFraction = 1 - (1 - self.inp.electricFraction) * min(
+                (self.inp.maxLightVolumeFraction * self.habVolume) / self.lightVolume,
                 self.hullSurface / self.windowArea)
             self.computeLightCollection()
 
-        self.outsidePower = (1 - input.insidePowerFraction) * self.habPower
+        self.outsidePower = (1 - self.inp.insidePowerFraction) * self.habPower
         self.insidePower = self.habPower - self.outsidePower + self.lightAbsPower + self.windowToHabPower
         self.hullPower = min(self.insidePower, self.hullTransfer * (self.hullSurface - self.windowArea) )
         self.coolingPower = self.insidePower - self.hullPower + self.windowCoolingPower
@@ -47,8 +50,8 @@ class Result:
             * self.coolingPower
         self.electricCoolingMass = self.electricMassPerPower * self.electricCoolingPower
         self.electricPower = self.habPower * self.electricFraction + self.electricCoolingPower
-        self.electricArea = self.electricPower / self.irradiation / input.electricEfficiency
-        self.electricMass = self.electricArea * input.electricSurfaceDensity
+        self.electricArea = self.electricPower / self.irradiation / self.inp.electricEfficiency
+        self.electricMass = self.electricArea * self.inp.electricSurfaceDensity
 
         self.collectionRadius = ((self.electricArea + self.lightCollectionArea) / math.pi) ** .5
         self.lightRadius = (self.lightCollectionArea / math.pi) ** .5
@@ -59,28 +62,28 @@ class Result:
 
     # noinspection PyAttributeOutsideInit
     def computeLightCollection(self):
-        self.maxAngularDeviation = input.concentrationFactor ** .5 * 7 / 1.5e3 / input.solarDistance
+        self.maxAngularDeviation = self.inp.concentrationFactor ** .5 * 7 / 1.5e3 / self.inp.solarDistance
         self.lightPower = (1 - self.electricFraction) * self.habPower
-        self.lightChannelSurface = self.lightPower / input.surfaceIntensity
-        self.lightAbsPower = self.lightChannelSurface * (1 - input.innerReflectivity) \
-            * self.irradiation * (input.solarDistance * 1.5e11) ** 2 / (3 * 7e8 ** 2) * input.outerReflectivity \
-            * (1 - input.windowReflectivity - input.windowAbsorptivity) * self.maxAngularDeviation ** 3
+        self.lightChannelSurface = self.lightPower / self.inp.surfaceIntensity
+        self.lightAbsPower = self.lightChannelSurface * (1 - self.inp.innerReflectivity) \
+            * self.irradiation * (self.inp.solarDistance * 1.5e11) ** 2 / (3 * 7e8 ** 2) * self.inp.outerReflectivity \
+            * (1 - self.inp.windowReflectivity - self.inp.windowAbsorptivity) * self.maxAngularDeviation ** 3
         self.windowPower = (self.lightPower + self.lightAbsPower) \
-            / (1 - input.windowReflectivity - input.windowAbsorptivity)
-        self.lightCollectionArea = self.windowPower / input.outerReflectivity / self.irradiation
-        self.windowArea = self.lightCollectionArea / input.concentrationFactor
-        self.lightMass = (self.lightCollectionArea + self.lightChannelSurface) * input.lightSurfaceDensity
-        self.windowTemperature = min(input.maxWindowTemperature, (1 / 2 * (input.windowAbsorptivity * self.windowPower
-            / (self.windowArea * input.emissivity * 5.67e-8) + input.skyTemp ** 4 + input.maxHabTemp ** 4)) ** .25)
-        if self.windowTemperature < input.maxWindowTemperature:
+            / (1 - self.inp.windowReflectivity - self.inp.windowAbsorptivity)
+        self.lightCollectionArea = self.windowPower / self.inp.outerReflectivity / self.irradiation
+        self.windowArea = self.lightCollectionArea / self.inp.concentrationFactor
+        self.lightMass = (self.lightCollectionArea + self.lightChannelSurface) * self.inp.lightSurfaceDensity
+        self.windowTemperature = min(self.inp.maxWindowTemperature, (1 / 2 * (self.inp.windowAbsorptivity * self.windowPower
+            / (self.windowArea * self.inp.emissivity * 5.67e-8) + self.inp.skyTemp ** 4 + self.inp.maxHabTemp ** 4)) ** .25)
+        if self.windowTemperature < self.inp.maxWindowTemperature:
             self.windowCoolingPower = 0
         else:
-            self.windowCoolingPower = input.windowAbsorptivity * self.windowPower - self.windowArea * input.emissivity \
-                * 5.67e-8 * (2 * self.windowTemperature ** 4 - input.skyTemp ** 4 - input.maxHabTemp ** 4)
-        self.windowToHabPower = self.windowArea * input.emissivity * 5.67e-8 * (self.windowTemperature ** 4 - input.maxHabTemp ** 4)
+            self.windowCoolingPower = self.inp.windowAbsorptivity * self.windowPower - self.windowArea * self.inp.emissivity \
+                * 5.67e-8 * (2 * self.windowTemperature ** 4 - self.inp.skyTemp ** 4 - self.inp.maxHabTemp ** 4)
+        self.windowToHabPower = self.windowArea * self.inp.emissivity * 5.67e-8 * (self.windowTemperature ** 4 - self.inp.maxHabTemp ** 4)
         self.lightVolume = (self.lightPower + self.lightAbsPower) \
-            / (3 * input.outerReflectivity * (1 - input.windowReflectivity - input.windowAbsorptivity)
-            * input.concentrationFactor * self.irradiation) * self.habRadius
+            / (3 * self.inp.outerReflectivity * (1 - self.inp.windowReflectivity - self.inp.windowAbsorptivity)
+            * self.inp.concentrationFactor * self.irradiation) * self.habRadius
         self.isUnconcentratedLightingPossible = (self.lightCollectionArea < math.pi * self.habRadius ** 2)
 
     # noinspection PyAttributeOutsideInit
@@ -88,42 +91,42 @@ class Result:
         self.absorptionFrictionPower = self.absFriction * self.coolingPower
         self.massFlow = (self.coolingPower + self.absorptionFrictionPower) / self.internalEnergyChange
         self.absorptionSurface = self.absorptionSurfacePerPower * self.coolingPower
-        self.absorptionSurfaceMass = self.absorptionSurface * input.absorptionSurfaceDensity
+        self.absorptionSurfaceMass = self.absorptionSurface * self.inp.absorptionSurfaceDensity
 
-        if input.coolantType == helpers.CoolantType.Air and self.massFlow > 0:
+        if self.inp.coolantType == helpers.CoolantType.Air and self.massFlow > 0:
             # assuming 2*habitatRadius is a typical length, although radiator-plane incoming pipes, radial distribution, ring-like backflow while absorbing heat, concentration in radiator plane
             lastMassFlow = 2 * self.massFlow  # only for iteration criterium
             while abs(self.massFlow - lastMassFlow) / lastMassFlow > 0.01:
                 lastMassFlow = self.massFlow
                 self.absorptionVelocity = 2 * self.habRadius * self.massFlow \
-                                          / (self.coolantDensity * input.windyVolumeFraction * self.habVolume)
+                                          / (self.coolantDensity * self.inp.windyVolumeFraction * self.habVolume)
                 self.absorptionReynolds = 8 * self.habRadius * self.massFlow / max(1e-10, self.absorptionSurface) / self.viscosity
                 self.absorptionFrictionPower = self.frictionFactor(self.absorptionReynolds) * self.coolantDensity / 8 \
-                                               / input.pumpEfficiency * self.absorptionSurface * self.absorptionVelocity ** 3
+                                               / self.inp.pumpEfficiency * self.absorptionSurface * self.absorptionVelocity ** 3
                 self.massFlow = (self.coolingPower + self.absorptionFrictionPower) / self.internalEnergyChange
-                if self.absorptionFrictionPower > (input.maxFrictionFraction - self.conFriction - self.emFriction) * self.coolingPower:
+                if self.absorptionFrictionPower > (self.inp.maxFrictionFraction - self.conFriction - self.emFriction) * self.coolingPower:
                     self.isCoolingPossible = False
                     break
             self.absFriction = self.absorptionFrictionPower / max(1e-10, self.coolingPower)
         else:
             self.absorptionReynolds = 8 * self.habRadius * self.massFlow / max(1e-10, self.absorptionSurface) / self.viscosity
-            self.absorptionVelocity = (8 * input.pumpEfficiency * self.absorptionFrictionPower
+            self.absorptionVelocity = (8 * self.inp.pumpEfficiency * self.absorptionFrictionPower
                 / self.frictionFactor(self.absorptionReynolds) / self.coolantDensity / max(1e-10, self.absorptionSurface)) ** ( 1 / 3)
 
         self.absorptionCrossSection = self.massFlow / self.coolantDensity / max(1e-10, self.absorptionVelocity)
         self.absorptionPipeDiameter = 8 * self.habRadius * self.absorptionCrossSection * self.absorptionSurface
         self.absorptionPipeNumber = self.absorptionSurface / math.pi / max(1e-10, self.absorptionPipeDiameter) / 2 / self.habRadius
-        if input.coolantType == helpers.CoolantType.Air:
+        if self.inp.coolantType == helpers.CoolantType.Air:
             self.absorptionSurfaceMass = 0
             self.absorptionCoolantMass = 0
-            self.absorptionVolume = input.windyVolumeFraction * self.habVolume
-        elif input.coolantType == helpers.CoolantType.Vapor:
+            self.absorptionVolume = self.inp.windyVolumeFraction * self.habVolume
+        elif self.inp.coolantType == helpers.CoolantType.Vapor:
             liquidAbsorptionReynolds = 8 * self.habRadius * self.massFlow / max(1e-10, self.absorptionSurface) / 1e-3
-            liquidAbsorptionVelocity = (8 * input.pumpEfficiency * self.absorptionFrictionPower
-                                     / self.frictionFactor(liquidAbsorptionReynolds) / input.liquidDensity / max(1e-10, self.absorptionSurface)) ** (1 / 3)
+            liquidAbsorptionVelocity = (8 * self.inp.pumpEfficiency * self.absorptionFrictionPower
+                                     / self.frictionFactor(liquidAbsorptionReynolds) / self.inp.liquidDensity / max(1e-10, self.absorptionSurface)) ** (1 / 3)
             self.absorptionCoolantMass = self.massFlow * self.habRadius * (1 / max(1e-10, self.absorptionVelocity) + 1 / max(1e-10, liquidAbsorptionVelocity))
             self.absorptionVolume = self.massFlow * self.habRadius * (1 / max(1e-10, self.absorptionVelocity * self.coolantDensity)
-                                                                      + 1 / max(1e-10, liquidAbsorptionVelocity * input.liquidDensity))
+                                                                      + 1 / max(1e-10, liquidAbsorptionVelocity * self.inp.liquidDensity))
         else:  # Liquid
             self.absorptionCoolantMass = 2 * self.massFlow * self.habRadius / max(1e-10, self.absorptionVelocity)
             self.absorptionVolume = self.absorptionCoolantMass / self.coolantDensity
@@ -136,50 +139,50 @@ class Result:
         self.radiatorPower = (1 + self.absFriction) * (1 + self.conFriction) * (1 + self.emFriction) * self.coolingPower
 
         connectionTempIncrease = self.connectionFrictionPower / (2 * self.heatCapacity * max(1e-10, self.massFlow))
-        if input.coolantType == helpers.CoolantType.Vapor:
+        if self.inp.coolantType == helpers.CoolantType.Vapor:
             basicEmissionSurface = (self.coolingPower + self.absorptionFrictionPower + self.connectionFrictionPower) \
-                                   / (input.emissivity * 5.67e-8 * self.incomingTemp ** 4)
+                                   / (self.inp.emissivity * 5.67e-8 * self.incomingTemp ** 4)
         else:  # Liquid and Air
-            basicEmissionSurface = self.massFlow * self.heatCapacity / (3 * input.emissivity * 5.67e-8) \
+            basicEmissionSurface = self.massFlow * self.heatCapacity / (3 * self.inp.emissivity * 5.67e-8) \
                 * ((self.incomingTemp - connectionTempIncrease) ** -3 - (self.outgoingTemp + connectionTempIncrease) ** -3)
-        if input.coolantType == helpers.CoolantType.Air:
+        if self.inp.coolantType == helpers.CoolantType.Air:
             def humidityToT4(T):
-                return 18 / 30 * 611 / input.airPressure / 1e5 * math.exp(5321 * (1 / 273 - 1 / T)) * T ** -4
+                return 18 / 30 * 611 / self.inp.airPressure / 1e5 * math.exp(5321 * (1 / 273 - 1 / T)) * T ** -4
             Tav = (self.outgoingDewPoint + self.incomingTemp - connectionTempIncrease) / 2
-            basicEmissionSurface += self.massFlow * 2.45e6 / (input.emissivity * 5.67e-8) \
+            basicEmissionSurface += self.massFlow * 2.45e6 / (self.inp.emissivity * 5.67e-8) \
                 * (humidityToT4(self.outgoingDewPoint) - humidityToT4(self.incomingTemp - connectionTempIncrease)
                 + 4 * humidityToT4(Tav) * (self.outgoingDewPoint - self.incomingTemp + connectionTempIncrease) / Tav)
 
         self.effectiveTemp = ((self.coolingPower + self.absorptionFrictionPower + self.connectionFrictionPower)
-                              / (input.emissivity * 5.67e-8 * max(1e-10, basicEmissionSurface))) ** (1 / 4)
+                              / (self.inp.emissivity * 5.67e-8 * max(1e-10, basicEmissionSurface))) ** (1 / 4)
         self.emissionSurface = (1 + self.emFriction + self.outsidePower / max(1e-10, self.coolingPower)) \
-            * self.effectiveTemp ** 4 / (self.effectiveTemp ** 4 - input.skyTemp ** 4) * basicEmissionSurface
-        self.emissionSurfaceMass = self.emissionSurface * input.emissionSurfaceDensity
-        self.emissionRadius = min(input.maxRadiatorToHabRadius * self.habRadius, self.emissionSurface ** .5 / 4)
+            * self.effectiveTemp ** 4 / (self.effectiveTemp ** 4 - self.inp.skyTemp ** 4) * basicEmissionSurface
+        self.emissionSurfaceMass = self.emissionSurface * self.inp.emissionSurfaceDensity
+        self.emissionRadius = min(self.inp.maxRadiatorToHabRadius * self.habRadius, self.emissionSurface ** .5 / 4)
 
         self.emissionReynolds = 8 * self.emissionRadius * self.massFlow / max(1e-10, self.emissionSurface) / self.viscosity
-        self.emissionVelocity = (8 * input.pumpEfficiency * self.emissionFrictionPower
+        self.emissionVelocity = (8 * self.inp.pumpEfficiency * self.emissionFrictionPower
             / self.frictionFactor(self.emissionReynolds) / self.coolantDensity / max(1e-10, self.emissionSurface)) ** ( 1 / 3)
 
         self.emissionCrossSection = self.massFlow / self.coolantDensity / max(1e-10, self.emissionVelocity)
         self.emissionPipeDiameter = 8 * self.emissionRadius * self.emissionCrossSection / max(1e-10, self.emissionSurface)
         self.emissionPipeNumber = self.emissionSurface / math.pi / max(1e-10, self.emissionPipeDiameter) / 2 / self.emissionRadius
 
-        if input.coolantType == helpers.CoolantType.Vapor:
+        if self.inp.coolantType == helpers.CoolantType.Vapor:
             liquidEmissionReynolds = 8 * self.emissionRadius * self.massFlow / max(1e-10, self.emissionSurface) / 1e-3
-            liquidEmissionVelocity = (8 * input.pumpEfficiency * self.emissionFrictionPower
-                                     / self.frictionFactor(liquidEmissionReynolds) / input.liquidDensity / max(1e-10, self.emissionSurface)) ** (1 / 3)
+            liquidEmissionVelocity = (8 * self.inp.pumpEfficiency * self.emissionFrictionPower
+                                     / self.frictionFactor(liquidEmissionReynolds) / self.inp.liquidDensity / max(1e-10, self.emissionSurface)) ** (1 / 3)
             self.emissionCoolantMass = self.massFlow * self.emissionRadius * (1 / max(1e-10, self.emissionVelocity) + 1 / max(1e-10, liquidEmissionVelocity))
             self.emissionVolume = self.massFlow * self.emissionRadius * (1 / max(1e-10, self.emissionVelocity * self.coolantDensity)
-                                                                         + 1 / max(1e-10, liquidEmissionVelocity * input.liquidDensity))
+                                                                         + 1 / max(1e-10, liquidEmissionVelocity * self.inp.liquidDensity))
         else:
             self.emissionCoolantMass = 2 * self.massFlow * self.emissionRadius / max(1e-10, self.emissionVelocity)
             self.emissionVolume = self.emissionCoolantMass / self.coolantDensity
 
     # noinspection PyAttributeOutsideInit
     def computeConnection(self):
-        self.connectionLength = input.hullSurfaceDensity / input.hullDensity
-        self.absorptionLength = input.aspectRatio * self.habRadius / 2
+        self.connectionLength = self.inp.hullSurfaceDensity / self.inp.hullDensity
+        self.absorptionLength = self.inp.aspectRatio * self.habRadius / 2
         self.emissionLength = self.emissionSurface / 8 / max(1e-10, self.emissionRadius)
         self.effectiveLength = self.connectionLength + 2 / 3 * (self.absorptionLength + self.emissionLength)
         self.totalLength = 2 * (self.absorptionLength + self.connectionLength + self.emissionLength)
@@ -188,20 +191,20 @@ class Result:
 
         self.connectionSurface = 4 * self.effectiveLength * (2 * math.pi * self.massFlow
             / self.coolantDensity / max(1e-10, self.connectionVelocity)) ** .5
-        self.connectionSurfaceMass = self.connectionSurface * input.emissionSurfaceDensity
+        self.connectionSurfaceMass = self.connectionSurface * self.inp.emissionSurfaceDensity
 
         connectionReynolds = 2 / self.viscosity * max(1e-10, self.coolantDensity * self.massFlow
                                                         * self.connectionVelocity / 2 / math.pi) ** .5
         self.connectionPipeDiameter = connectionReynolds * self.viscosity / self.coolantDensity / max(1e-10, self.connectionVelocity)
         self.connectionCrossSection = self.massFlow / self.coolantDensity / max(1e-10, self.connectionVelocity)
 
-        if input.coolantType == helpers.CoolantType.Vapor:
+        if self.inp.coolantType == helpers.CoolantType.Vapor:
             self.connectionCrossSection /= 2
-            liquidConnectionVelocity = self.computeConnectionVelocity(1e-3, input.liquidDensity)
+            liquidConnectionVelocity = self.computeConnectionVelocity(1e-3, self.inp.liquidDensity)
             self.connectionCoolantMass = self.massFlow * (self.connectionLength + self.absorptionLength / 2 + self.emissionLength / 2)\
                                          * ( 1 / max(1e-10, self.connectionVelocity) + 1 / max(1e-10, liquidConnectionVelocity))
             self.connectionVolume = self.massFlow * (self.connectionLength + self.absorptionLength / 2 + self.emissionLength / 2)\
-                * ( 1 / max(1e-10, self.connectionVelocity * self.coolantDensity) + 1 / max(1e-10, liquidConnectionVelocity * input.liquidDensity))
+                * ( 1 / max(1e-10, self.connectionVelocity * self.coolantDensity) + 1 / max(1e-10, liquidConnectionVelocity * self.inp.liquidDensity))
         else:
             self.connectionCoolantMass = 2 * self.massFlow * (self.connectionLength
                 + self.absorptionLength / 2 + self.emissionLength / 2) / max(1e-10, self.connectionVelocity)
@@ -211,84 +214,81 @@ class Result:
         interiorConnectionVolume = self.absorptionLength / (2 * self.connectionLength + self.absorptionLength + self.emissionLength) * self.connectionVolume
         self.coolantVolumeFraction = (self.absorptionVolume + interiorConnectionVolume) / self.habVolume
         self.connectionAreaFraction = self.connectionCrossSection / math.pi / self.habRadius ** 2
-        if self.connectionAreaFraction > 1 or (input.coolantType != helpers.CoolantType.Air and
-                                               self.coolantVolumeFraction > input.maxCoolantVolumeFraction):
+        if self.connectionAreaFraction > 1 or (self.inp.coolantType != helpers.CoolantType.Air and
+                                               self.coolantVolumeFraction > self.inp.maxCoolantVolumeFraction):
             self.isCoolingPossible = False
 
     def computeConnectionVelocity(self, viscosity, density):
-        isConFrictionFactorMin = (self.connectionFrictionPower > 3.918e-10 / input.minFrictionFactor ** 19 * viscosity ** 5
-                                       * self.effectiveLength / input.pumpEfficiency / max(1e-10, self.massFlow * density) ** 2)
+        isConFrictionFactorMin = (self.connectionFrictionPower > 3.918e-10 / self.inp.minFrictionFactor ** 19 * viscosity ** 5
+                                       * self.effectiveLength / self.inp.pumpEfficiency / max(1e-10, self.massFlow * density) ** 2)
         if isConFrictionFactorMin:
             self.connectionExponent = 2 / 5
-            return (0.798 / input.minFrictionFactor * input.pumpEfficiency * self.connectionFrictionPower
+            return (0.798 / self.inp.minFrictionFactor * self.inp.pumpEfficiency * self.connectionFrictionPower
                 / self.effectiveLength / max(1e-10, density * self.massFlow) ** .5 ) ** self.connectionExponent
         else:
             self.connectionExponent = 8 / 19
-            return (2.383 * input.pumpEfficiency * self.connectionFrictionPower / self.effectiveLength
+            return (2.383 * self.inp.pumpEfficiency * self.connectionFrictionPower / self.effectiveLength
                 / max(1e-10, density * self.massFlow) ** (3 / 8) / viscosity ** (1 / 4) ) ** self.connectionExponent
 
 
-    @classmethod
-    def computeGeneral(cls):
+    def computeGeneral(self):
 
-        cls.irradiation = 1360 / input.solarDistance ** 2 * (1 - input.shadedFraction)
+        self.irradiation = 1360 / self.inp.solarDistance ** 2 * (1 - self.inp.shadedFraction)
 
-        cls.hullTransfer = cls.computeHullTransfer()
+        self.hullTransfer = self.computeHullTransfer()
 
-        cls.electricMassPerPower = input.electricSurfaceDensity / cls.irradiation / input.electricEfficiency
+        self.electricMassPerPower = self.inp.electricSurfaceDensity / self.irradiation / self.inp.electricEfficiency
 
-        if input.coolantType == helpers.CoolantType.Air:
-            cls.outgoingTemp = input.maxHabTemp
-            cls.incomingTemp = input.minHabTemp
+        if self.inp.coolantType == helpers.CoolantType.Air:
+            self.outgoingTemp = self.inp.maxHabTemp
+            self.incomingTemp = self.inp.minHabTemp
         else:
-            if input.maxHabTemp - input.minHabTemp < input.tempDiffFlow:
-                cls.outgoingTemp = input.maxHabTemp - input.minTempDiffHabCoolant
-                cls.incomingTemp = cls.outgoingTemp - input.tempDiffFlow
+            if self.inp.maxHabTemp - self.inp.minHabTemp < self.inp.tempDiffFlow:
+                self.outgoingTemp = self.inp.maxHabTemp - self.inp.minTempDiffHabCoolant
+                self.incomingTemp = self.outgoingTemp - self.inp.tempDiffFlow
             else:
-                cls.incomingTemp = input.minHabTemp - input.minTempDiffHabCoolant
-                cls.outgoingTemp = input.incomingTemp + input.tempDiffFlow
-        cls.outgoingDewPoint = 1 / (1 / cls.outgoingTemp - math.log(input.outgoingRelativeHumidity) / 5321)
-        if input.coolantType == helpers.CoolantType.Liquid:
-            cls.coolantDensity = input.liquidDensity
-            cls.heatCapacity = input.liquidHeatCapacity
-            cls.viscosity = 1e-3
-        elif input.coolantType == helpers.CoolantType.Vapor:
-            cls.coolantDensity = 611 / 461 / cls.incomingTemp * math.exp(5321 * (1 / 273 - 1 / cls.incomingTemp))
-            cls.heatCapacity = 1900
-            cls.viscosity = 8e-6
+                self.incomingTemp = self.inp.minHabTemp - self.inp.minTempDiffHabCoolant
+                self.outgoingTemp = self.inp.incomingTemp + self.inp.tempDiffFlow
+        self.outgoingDewPoint = 1 / (1 / self.outgoingTemp - math.log(self.inp.outgoingRelativeHumidity) / 5321)
+        if self.inp.coolantType == helpers.CoolantType.Liquid:
+            self.coolantDensity = self.inp.liquidDensity
+            self.heatCapacity = self.inp.liquidHeatCapacity
+            self.viscosity = 1e-3
+        elif self.inp.coolantType == helpers.CoolantType.Vapor:
+            self.coolantDensity = 611 / 461 / self.incomingTemp * math.exp(5321 * (1 / 273 - 1 / self.incomingTemp))
+            self.heatCapacity = 1900
+            self.viscosity = 8e-6
         else:  # Air
-            cls.coolantDensity = 1.2 * input.airPressure
-            cls.heatCapacity = 1000
-            cls.viscosity = 1.8e-5
-        cls.internalEnergyChange = cls.heatCapacity * (cls.outgoingTemp - cls.incomingTemp)
-        if input.coolantType == helpers.CoolantType.Vapor:
-            cls.internalEnergyChange += input.vaporLatentHeat
-        elif input.coolantType == helpers.CoolantType.Air:
-            cls.internalEnergyChange += 2.453e6 * 18 / 30 * 611 / input.airPressure / 1e5 \
-                                    * (input.outgoingRelativeHumidity * math.exp(5321 * (1 / 273 - 1 / cls.outgoingTemp))
-                                       - math.exp(5321 * (1 / 273 - 1 / cls.incomingTemp)))
-        if input.coolantType == helpers.CoolantType.Air:
-            cls.absorptionSurfacePerPower = input.innerSurfacePerPower
+            self.coolantDensity = 1.2 * self.inp.airPressure
+            self.heatCapacity = 1000
+            self.viscosity = 1.8e-5
+        self.internalEnergyChange = self.heatCapacity * (self.outgoingTemp - self.incomingTemp)
+        if self.inp.coolantType == helpers.CoolantType.Vapor:
+            self.internalEnergyChange += self.inp.vaporLatentHeat
+        elif self.inp.coolantType == helpers.CoolantType.Air:
+            self.internalEnergyChange += 2.453e6 * 18 / 30 * 611 / self.inp.airPressure / 1e5 \
+                                         * (self.inp.outgoingRelativeHumidity * math.exp(5321 * (1 / 273 - 1 / self.outgoingTemp))
+                                            - math.exp(5321 * (1 / 273 - 1 / self.incomingTemp)))
+        if self.inp.coolantType == helpers.CoolantType.Air:
+            self.absorptionSurfacePerPower = self.inp.innerSurfacePerPower
         else:
-            maxTempDiffHabCoolant = max(input.maxHabTemp - cls.outgoingTemp, input.minHabTemp - cls.incomingTemp)
-            if maxTempDiffHabCoolant > input.minTempDiffHabCoolant:
-                cls.absorptionSurfacePerPower = 1 / input.absorptionTransferCoeff / (maxTempDiffHabCoolant - input.minTempDiffHabCoolant) \
-                * math.log(maxTempDiffHabCoolant / input.minTempDiffHabCoolant)
+            maxTempDiffHabCoolant = max(self.inp.maxHabTemp - self.outgoingTemp, self.inp.minHabTemp - self.incomingTemp)
+            if maxTempDiffHabCoolant > self.inp.minTempDiffHabCoolant:
+                self.absorptionSurfacePerPower = 1 / self.inp.absorptionTransferCoeff / (maxTempDiffHabCoolant - self.inp.minTempDiffHabCoolant) \
+                                                 * math.log(maxTempDiffHabCoolant / self.inp.minTempDiffHabCoolant)
             else:
-                cls.absorptionSurfacePerPower = 1 / input.absorptionTransferCoeff / maxTempDiffHabCoolant
+                self.absorptionSurfacePerPower = 1 / self.inp.absorptionTransferCoeff / maxTempDiffHabCoolant
 
-    @staticmethod
-    def frictionFactor(reynolds):
+    def frictionFactor(self, reynolds):
         if reynolds == 0:
             return 1e-10
         elif reynolds < 2300:
             return 64 / reynolds
         else:
-            return max(input.minFrictionFactor, 0.3164 * reynolds ** (-1 / 4))
+            return max(self.inp.minFrictionFactor, 0.3164 * reynolds ** (-1 / 4))
 
-    @classmethod
-    def computeHullTransfer(cls):
-        hullResistance = input.hullSurfaceDensity / input.hullDensity / input.hullConductivity
+    def computeHullTransfer(self):
+        hullResistance = self.inp.hullSurfaceDensity / self.inp.hullDensity / self.inp.hullConductivity
         lastPowerPerSurface = 0
         newPowerPerSurface = 100
         dampening = 1 / 5
@@ -296,24 +296,24 @@ class Result:
             powerPerSurface = lastPowerPerSurface + (newPowerPerSurface - lastPowerPerSurface) * dampening
             lastPowerPerSurface = powerPerSurface
 
-            innerHullTemp = input.minHabTemp - powerPerSurface / input.absorptionTransferCoeff
+            innerHullTemp = self.inp.minHabTemp - powerPerSurface / self.inp.absorptionTransferCoeff
 
-            innerGapTemp = innerHullTemp - powerPerSurface * input.gapLocation * hullResistance
+            innerGapTemp = innerHullTemp - powerPerSurface * self.inp.gapLocation * hullResistance
 
-            if input.gapThickness > 0:
+            if self.inp.gapThickness > 0:
                 # radiative heat transfer [W/m**2K] (if outerGapTemp 1K lower than innerGapTemp)
                 radiativeResistance, effectiveEmissivity, numberReflections = \
-                    cls.gapRadiation(innerGapTemp, innerGapTemp - 1, input.innerGapEmissivity, input.outerGapEmissivity)
+                    self.gapRadiation(innerGapTemp, innerGapTemp - 1, self.inp.innerGapEmissivity, self.inp.outerGapEmissivity)
                 outerGapTemp = innerGapTemp - powerPerSurface \
-                    / (input.gapTransferCoeff / 2 + input.gapConductivity / input.gapThickness + 1 / radiativeResistance)
+                    / (self.inp.gapTransferCoeff / 2 + self.inp.gapConductivity / self.inp.gapThickness + 1 / radiativeResistance)
             else:
                 outerGapTemp = innerGapTemp
 
-            surfaceTemp = max(input.skyTemp, outerGapTemp - powerPerSurface * (1 - input.gapLocation) * hullResistance)
+            surfaceTemp = max(self.inp.skyTemp, outerGapTemp - powerPerSurface * (1 - self.inp.gapLocation) * hullResistance)
 
-            newPowerPerSurface = max(0, 5.67e-8 * input.emissivity * surfaceTemp ** 4
-                              - input.emissivity * 5.67e-8 * input.skyTemp ** 4
-                              - cls.irradiation * input.hullSurfaceAbsorptivity / (2 + 2 * input.aspectRatio) )
+            newPowerPerSurface = max(0, 5.67e-8 * self.inp.emissivity * surfaceTemp ** 4
+                                     - self.inp.emissivity * 5.67e-8 * self.inp.skyTemp ** 4
+                                     - self.irradiation * self.inp.hullSurfaceAbsorptivity / (2 + 2 * self.inp.aspectRatio))
 
         return powerPerSurface  # transmitted power per surface [W/m**2]
 

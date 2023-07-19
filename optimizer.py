@@ -1,37 +1,38 @@
 # the mass required for cooling can be approximately minimized here (optimizing the power to overcome friction)
 
 import helpers
-import input
+from habitat import Habitat
+from input import Input
 from result import Result
 
 
-def getOptimizedResult(power):
+def getOptimizedResult(inp: Input, power, hullPowerPerSurface):
     # computation with start values:
-    res = Result(power, input.absorptionFrictionFraction, input.connectionFrictionFraction, input.emissionFrictionFraction)
+    res = Habitat(inp, power, inp.absorptionFrictionFraction, inp.connectionFrictionFraction, inp.emissionFrictionFraction, hullPowerPerSurface)
     if res.coolingPower == 0:
-        return Result(power, 0, 0, 0)
+        return Habitat(power, 0, 0, 0)
 
     # new friction fractions:
-    linearMass = res.outerConnectionCoolantMass + res.emissionSurfaceMass \
+    linearMass = res.connection.outerConnectionCoolantMass + res.emission.emissionSurfaceMass \
                  + res.electricMassPerPower * (1 + res.absFriction) * (1 + res.conFriction) * (1 + res.emFriction) * res.coolingPower
 
-    if input.coolantType == helpers.CoolantType.Air:
+    if inp.coolantType == helpers.CoolantType.Air:
         absFriction = res.absFriction  # no optimization for airflow absorption
     else:
-        absFriction = ((1 + res.absFriction) * res.absFriction ** (1 / 3) * res.absorptionCoolantMass / 3
-            / ( res.absorptionCoolantMass + res.connectionCoolantMass + res.emissionCoolantMass + linearMass)) ** (3 / 4)
+        absFriction = ((1 + res.absFriction) * res.absFriction ** (1 / 3) * res.absorption.absorptionCoolantMass / 3
+            / ( res.absorption.absorptionCoolantMass + res.connection.connectionCoolantMass + res.emission.emissionCoolantMass + linearMass)) ** (3 / 4)
 
-    conFriction = ( res.connectionExponent * (1 + res.conFriction) * res.conFriction ** res.connectionExponent
-        * res.connectionCoolantMass / linearMass) ** (1 / (res.connectionExponent + 1))
+    conFriction = ( res.connection.connectionExponent * (1 + res.conFriction) * res.conFriction ** res.connection.connectionExponent
+        * res.connection.connectionCoolantMass / linearMass) ** (1 / (res.connection.connectionExponent + 1))
 
-    emFriction = ((1 + res.emFriction) * res.emFriction ** (1 / 3) * res.emissionCoolantMass / 3
+    emFriction = ((1 + res.emFriction) * res.emFriction ** (1 / 3) * res.emission.emissionCoolantMass / 3
         / linearMass) ** (3 / 4)
 
-    scaling = input.maxFrictionFraction / (absFriction + conFriction + emFriction)
+    scaling = inp.maxFrictionFraction / (absFriction + conFriction + emFriction)
     if scaling < 1:
         absFriction *= scaling
         conFriction *= scaling
         emFriction *= scaling
 
     # computation with optimized friction:
-    return Result(power, absFriction, conFriction, emFriction)
+    return Habitat(inp, power, absFriction, conFriction, emFriction)

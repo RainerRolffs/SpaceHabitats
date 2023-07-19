@@ -1,26 +1,27 @@
 # computations are started here
-
-import input
+from hullTransfer import HullTransfer
+from input import Input
 import output
-from result import Result
+from habitat import Habitat
 import optimizer
 
 
 def computePowers():
-    Result.computeGeneral()
+    hullPowerPerSurface = HullTransfer(inp).powerPerSurface
     results = []
-    for power in input.powers:
-        if input.isFrictionOptimized:
-            results.append( optimizer.getOptimizedResult(power))
+    for power in inp.powers:
+        if inp.isFrictionOptimized:
+            results.append( optimizer.getOptimizedResult(inp, power, hullPowerPerSurface))
         else:
-            results.append( Result(power,
-                input.absorptionFrictionFraction, input.connectionFrictionFraction, input.emissionFrictionFraction) )
+            results.append( Habitat(inp, power,
+                inp.absorptionFrictionFraction, inp.connectionFrictionFraction, inp.emissionFrictionFraction, hullPowerPerSurface) )
     return results
 
 
 if __name__ == '__main__':
     runResults = []
-    for iRun in range(input.numberRuns):
-        input.changeParameters(input, iRun)
+    inp = Input()
+    for iRun in range(inp.numberRuns):
+        inp.changeParameters(iRun)
         runResults.append( computePowers() )
-    output.writeResults(runResults)
+    output.writeResults(inp, runResults)
