@@ -4,6 +4,14 @@ import enum
 import math
 
 
+class ShapeType(enum.Enum):
+    Oblate = 0
+    Prolate = 1
+    Cylinder = 2
+    Torus = 3
+    Dumbbell = 4
+
+
 class CoolantType(enum.Enum):
     Liquid = 0
     Vapor = 1
@@ -72,5 +80,6 @@ def frictionFactor(reynolds, minFrictionFactor):
         return 64 / reynolds
     else:
         return max(minFrictionFactor, 0.3164 * reynolds ** (-1 / 4))
+
 
 

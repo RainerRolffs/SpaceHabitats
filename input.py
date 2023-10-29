@@ -1,6 +1,6 @@
 # The input parameters are defined here
 
-import helpers
+from helpers import ShapeType, LogRange, CoolantType
 
 
 class Input:
@@ -8,13 +8,20 @@ class Input:
     project = "default"  # a directory of this name is created, containting input.py and the result figures (in case of computing more than one power)
 
     # Habitat:
-    powers = helpers.LogRange(numberOfModels=100, minPower=1e3, maxPower=1e18)  # list of habitat powers to be computed
+    powers = LogRange(numberOfModels=100, minPower=1e3, maxPower=1e18)  # list of habitat powers to be computed
     # set to [power] to compute only one power; (can be overriden by command-line argument "--power" or "--volume")
     powerPerVolume = 25  # power density (total electric and lighting consumption per habitat volume) [W/m**3]
     # (overriden if both "--power" and "--volume" are given)
     interiorMassPerPower = 2.5  # [kg/W]
-    aspectRatio = 1.3  # cylinder length to radius
     insidePowerFraction = 1  # fraction of the habitat power inside the shielding
+    stressPerDensity = 1e5  # tensile stress per density of structural material [Nm/kg]
+
+    # Geometry
+    shapeType = ShapeType.Cylinder
+    aspectRatio = 1.3  # desired ratio of minor radius (spheroid), length (cylinder), or habitat radius (torus, dumbbel)l to rotational  radius
+    maxGravity = 10  # [m/s²]
+    dumbbellRadiiRatio = 1  # radius of larger to radius of smaller sphere
+    dumbbellTubeFraction = 0.01  # volume fraction of the connecting tube between the two spheres
 
     # Energy Collection:
     solarDistance = 1  # distance to the Sun [AU=1.5e11m]
@@ -45,7 +52,7 @@ class Input:
     gapConductivity = 0.01  # [W/Km]
 
     # Coolant:
-    coolantType = helpers.CoolantType.Liquid
+    coolantType = CoolantType.Liquid
     liquidDensity = 1000  # [kg/m**3] (only for Liquid)
     liquidHeatCapacity = 4280  # [J/kgK] (only for Liquid)
     vaporLatentHeat = 2.453e6  # [J/kg] (only for Vapor)
@@ -72,6 +79,7 @@ class Input:
     skyTemp = 3  # average temperature of counter-radiation [K]
     emissionSurfaceDensity = 5  # [kg/m**2]
     maxRadiatorToHabRadius = 2   # maximum ratio of radiator radius to habitat radius
+    maxRadiatorToCorotRadius = 1   # maximum ratio of radiator radius to co-rotational radius
 
     # Friction:
     pumpEfficiency = 0.8  # efficiency of pump or fan
@@ -90,10 +98,10 @@ class Input:
     def changeParameters(self, iRun):
         self.iRun = iRun
         if iRun == 1:
-            self.coolantType = helpers.CoolantType.Air
+            self.coolantType = CoolantType.Air
             self.label.append("Air")
         elif iRun == 2:
-            self.coolantType = helpers.CoolantType.Vapor
+            self.coolantType = CoolantType.Vapor
             self.label.append("Vapor")
 
     def getIrradiation(self):
