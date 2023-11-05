@@ -5,14 +5,14 @@ from input import Input
 
 
 class Connection:
-    def __init__(self, inp: Input, habRadius, emissionSurface, emissionRadius, massFlow, absorptionVolume, habVolume, connectionFrictionPower):
+    def __init__(self, inp: Input, habRadius, habLength, emissionSurface, emissionRadius, massFlow, absorptionVolume, habVolume, connectionFrictionPower):
         self.inp = inp
         self.massFlow = massFlow
         self.connectionFrictionPower = connectionFrictionPower
         coolingHelper = helpers.CoolingHelper(inp)
 
         self.connectionLength = inp.hullSurfaceDensity / inp.hullDensity
-        self.absorptionLength = inp.aspectRatio * habRadius / 2
+        self.absorptionLength = habLength / 2
         self.emissionLength = emissionSurface / 8 / max(1e-10, emissionRadius)
         self.effectiveLength = self.connectionLength + 2 / 3 * (self.absorptionLength + self.emissionLength)
         self.totalLength = 2 * (self.absorptionLength + self.connectionLength + self.emissionLength)

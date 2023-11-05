@@ -2,7 +2,7 @@ from input import Input
 
 
 class HullTransfer:
-    def __init__(self, inp: Input):
+    def __init__(self, inp: Input, crossSectionToHullSurface: float):
         hullResistance = inp.hullSurfaceDensity / inp.hullDensity / inp.hullConductivity
         lastPowerPerSurface = 0
         newPowerPerSurface = 100
@@ -28,8 +28,7 @@ class HullTransfer:
 
             newPowerPerSurface = max(0, 5.67e-8 * inp.emissivity * surfaceTemp ** 4
                                      - inp.emissivity * 5.67e-8 * inp.skyTemp ** 4
-                                     - inp.getIrradiation() * inp.hullSurfaceAbsorptivity / (2 + 2 * inp.aspectRatio))
-
+                                     - inp.getIrradiation() * inp.hullSurfaceAbsorptivity * crossSectionToHullSurface)
         # return powerPerSurface  # transmitted power per surface [W/m**2]
 
     def gapRadiation(self, T1, T2, e1, e2):

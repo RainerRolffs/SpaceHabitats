@@ -75,7 +75,7 @@ def writeResults(inp: Input, runResults: [[Habitat]]):
     ax.set_ylabel("Length per Power [m/W]")
     ax.loglog()
     print("\nLength per Power [m/W]")
-    plot("shape.habRadius", "Habitat Radius")
+    plot("shape.effectiveHabRadius", "Habitat Radius")
     plot("collectionRadius", "Energy Collection Radius", "light")
     plot("connection.emissionLength", "Emission Length", "cool")
     plot("emission.emissionRadius", "Emission Radius", "cool")

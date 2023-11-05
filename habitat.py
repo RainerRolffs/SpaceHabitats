@@ -18,19 +18,20 @@ class Habitat:
         self.conFriction = conFriction
         self.emFriction = emFriction
 
+        self.shape = Shape(inp, habPower)
+
         if hullPowerPerSurface is not None:
             self.hullPowerPerSurface = hullPowerPerSurface
         else:
-            self.hullPowerPerSurface = HullTransfer(inp).powerPerSurface
-
-        self.shape = Shape(inp, habPower)
+            self.hullPowerPerSurface = HullTransfer(inp, self.shape.crossSection / self.shape.hullSurface).powerPerSurface
 
         # Light
         self.electricFraction = inp.electricFraction
         self.lightPower = self.habPower * (1 - self.electricFraction)
         self.lightCollection = LightCollection(inp,
                                                self.lightPower,
-                                               self.shape.habRadius)
+                                               self.shape.effectiveHabRadius,
+                                               self.shape.crossSection)
         self.isCompleteLighting = (self.lightCollection.lightVolume < inp.maxLightVolumeFraction * self.shape.habVolume) \
             and (self.lightCollection.windowArea < self.shape.hullSurface)
         if not self.isCompleteLighting:
@@ -40,7 +41,8 @@ class Habitat:
             self.lightPower = self.habPower * (1 - self.electricFraction)
             self.lightCollection = LightCollection(inp,
                                                    self.lightPower,
-                                                   self.shape.habRadius)
+                                                   self.shape.effectiveHabRadius,
+                                                   self.shape.crossSection)
 
         self.outsidePower = (1 - inp.insidePowerFraction) * self.habPower
         self.insidePower = self.habPower - self.outsidePower + self.lightCollection.lightAbsPower + self.lightCollection.windowToHabPower
@@ -52,7 +54,8 @@ class Habitat:
 
         self.emission = Emission(inp, self.coolingPower, self.absFriction, conFriction, emFriction, self.absorption.massFlow, self.outsidePower, self.shape.habRadius)
 
-        self.connection = Connection(inp, self.shape.habRadius, self.emission.emissionSurface, self.emission.emissionRadius,
+        effectiveHabLength = self.shape.habVolume / math.pi / self.shape.effectiveHabRadius ** 2
+        self.connection = Connection(inp, self.shape.effectiveHabRadius, effectiveHabLength, self.emission.emissionSurface, self.emission.emissionRadius,
                                      self.absorption.massFlow, self.absorption.absorptionVolume, self.shape.habVolume, self.emission.connectionFrictionPower)
 
         self.isCoolingPossible = self.absorption.isCoolingPossible and self.connection.isCoolingPossible

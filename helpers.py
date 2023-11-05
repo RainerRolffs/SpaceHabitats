@@ -5,11 +5,12 @@ import math
 
 
 class ShapeType(enum.Enum):
-    Oblate = 0
-    Prolate = 1
-    Cylinder = 2
+    Cylinder = 0
+    Tube = 1
+    Oblate = 2
     Torus = 3
     Dumbbell = 4
+    DumbbellTube = 5
 
 
 class CoolantType(enum.Enum):

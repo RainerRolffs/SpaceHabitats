@@ -1,6 +1,7 @@
 # computations are started here
 import argparse
 from hullTransfer import HullTransfer
+from shape import Shape
 from input import Input
 import output, outputSinglePower
 from habitat import Habitat
@@ -8,7 +9,8 @@ import optimizer
 
 
 def computePowers():
-    hullPowerPerSurface = HullTransfer(inp).powerPerSurface
+    tempShape = Shape(inp, inp.powers[0])
+    hullPowerPerSurface = HullTransfer(inp, tempShape.crossSection / tempShape.hullSurface).powerPerSurface
     results = []
     for power in inp.powers:
         if inp.isFrictionOptimized:

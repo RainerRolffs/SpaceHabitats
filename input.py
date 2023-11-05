@@ -14,14 +14,24 @@ class Input:
     # (overriden if both "--power" and "--volume" are given)
     interiorMassPerPower = 2.5  # [kg/W]
     insidePowerFraction = 1  # fraction of the habitat power inside the shielding
-    stressPerDensity = 1e5  # tensile stress per density of structural material [Nm/kg]
 
     # Geometry
     shapeType = ShapeType.Cylinder
-    aspectRatio = 1.3  # desired ratio of minor radius (spheroid), length (cylinder), or habitat radius (torus, dumbbel)l to rotational  radius
+    cylinderLengthToRotRadius = 1.3  # for Cylinder
+    tubeRadiusToRotRadius = 0.1  # for Tube and DumbbellTube
+    oblateMinorToRotRadius = 1  # for Oblate
+    torusHabToRotRadius = 0.25  # for Torus
+    dumbbellMinorToRotRadius = 0.1  # for Dumbbell and DumbbellTube
+    dumbbellMajorToMinorRadius = 1  # for Dumbbell and DumbbellTube
+
+    # Gravity Distribution
+    constantFloorHeight = 5  # part that is independent of radius [m]
+    variableFloorHeight = 5  # part that grows with lower gravity [m]
+
+    # Structural Integrity
+    stressPerDensity = 1e5  # tensile stress per density of structural material [Nm/kg]
+    airPressure = 0.4  # [bar=1e5Pa]
     maxGravity = 10  # [m/s²]
-    dumbbellRadiiRatio = 1  # radius of larger to radius of smaller sphere
-    dumbbellTubeFraction = 0.01  # volume fraction of the connecting tube between the two spheres
 
     # Energy Collection:
     solarDistance = 1  # distance to the Sun [AU=1.5e11m]
@@ -70,7 +80,6 @@ class Input:
 
     # Heat Absorption (Air):
     outgoingRelativeHumidity = 0.8  # relative humidity of outgoing air
-    airPressure = 0.4  # [bar=1e5Pa]
     innerSurfacePerPower = 0.01  # [m**2/W]
     windyVolumeFraction = 0.25  # fraction of the habitat volume occupied by airflow
 
