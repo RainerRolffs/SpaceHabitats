@@ -36,7 +36,7 @@ def showResults(inp: Input, runResults: [[Habitat]]):
         print("\t Emission Coolant %.2e kg" % hab.emission.emissionCoolantMass)
         print("\t Additional Electricity %.2e kg" % hab.electricCoolingMass)
 
-        print("\nHabitat Radius %.2e m" % hab.shape.habRadius)
+        print("\nRotational Radius %.2e m" % hab.shape.rotationalRadius)
         print("Energy Collection Radius %.2e m" % hab.collectionRadius)
         print("Emission Length %.2e m" % hab.connection.emissionLength)
         print("Emission Radius %.2e m" % hab.emission.emissionRadius)

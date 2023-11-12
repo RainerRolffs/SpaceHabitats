@@ -11,26 +11,22 @@ class Shape:
             self.rotationalRadius = (self.habVolume / inp.cylinderLengthToRotRadius / math.pi) ** (1 / 3)
             self.hullSurface = 2 * math.pi * self.rotationalRadius ** 2 * (1 + inp.cylinderLengthToRotRadius)
             self.crossSection = math.pi * self.rotationalRadius ** 2
-            self.effectiveHabRadius = self.rotationalRadius
 
         elif inp.shapeType == ShapeType.Tube:
             self.rotationalRadius = (self.habVolume / 2 / math.pi / inp.tubeRadiusToRotRadius ** 2) ** (1 / 3)
             self.hullSurface = 2 * math.pi * self.rotationalRadius ** 2 * (inp.tubeRadiusToRotRadius ** 2 + 2 * inp.tubeRadiusToRotRadius)
             self.crossSection = 4 * inp.tubeRadiusToRotRadius * self.rotationalRadius ** 2
-            self.effectiveHabRadius = inp.tubeRadiusToRotRadius * self.rotationalRadius
 
         elif inp.shapeType == ShapeType.Oblate:
             self.rotationalRadius = (self.habVolume / inp.oblateMinorToRotRadius * 3 / 4 / math.pi) ** (1 / 3)
             aspectFactor = (1 - inp.oblateMinorToRotRadius) ** .5
             self.hullSurface = math.pi * self.rotationalRadius ** 2 * (2 + inp.oblateMinorToRotRadius ** 2 / aspectFactor * math.log((1 + aspectFactor) / (1 - aspectFactor)))
             self.crossSection = math.pi * self.rotationalRadius ** 2
-            self.effectiveHabRadius = self.rotationalRadius * (1 + inp.oblateMinorToRotRadius) / 2
 
         elif inp.shapeType == ShapeType.Torus:
             self.rotationalRadius = (self.habVolume / inp.torusHabToRotRadius ** 2 / (1 - inp.torusHabToRotRadius) / 2 / math.pi ** 2) ** (1 / 3)
             self.hullSurface = 4 * math.pi ** 2 * self.rotationalRadius ** 2 * inp.torusHabToRotRadius * (1 - inp.torusHabToRotRadius ** 2)
             self.crossSection = math.pi * self.rotationalRadius ** 2 * (1 - (1 - 2 * inp.torusHabToRotRadius) ** 2)
-            self.effectiveHabRadius = inp.torusHabToRotRadius * self.rotationalRadius
 
         elif (inp.shapeType == ShapeType.Dumbbell) or (inp.shapeType == ShapeType.DumbbellTube):
             self.rotationalRadius = 1 / inp.dumbbellMinorToRotRadius * (self.habVolume * 3 / 4
@@ -38,7 +34,6 @@ class Shape:
             self.massRatio = (inp.hullSurfaceDensity + inp.interiorMassPerPower * inp.powerPerVolume / 3 * inp.dumbbellMinorToRotRadius * self.rotationalRadius) \
                 / (inp.hullSurfaceDensity * inp.dumbbellMajorToMinorRadius ** 2 + inp.interiorMassPerPower * inp.powerPerVolume / 3
                 * inp.dumbbellMajorToMinorRadius ** 3 * inp.dumbbellMinorToRotRadius * self.rotationalRadius)
-            self.effectiveHabRadius = inp.dumbbellMinorToRotRadius * self.rotationalRadius * (1 + inp.dumbbellMajorToMinorRadius) / 2
 
             if inp.shapeType == ShapeType.Dumbbell:
                 self.otherRotationalRadius = (inp.dumbbellMajorToMinorRadius * inp.dumbbellMinorToRotRadius + self.massRatio * (

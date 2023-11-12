@@ -3,7 +3,6 @@
 import helpers
 from habitat import Habitat
 from input import Input
-from result import Result
 
 
 def getOptimizedResult(inp: Input, power, hullPowerPerSurface):
