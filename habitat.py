@@ -12,6 +12,7 @@ from shape import Shape
 class Habitat:
 
     def __init__(self, inp: Input, habPower, absFriction, conFriction, emFriction, hullPowerPerSurface=None):
+        self.iRun = inp.iRun
         self.habPower = habPower
         self.absFriction = absFriction
         self.conFriction = conFriction
@@ -47,8 +48,9 @@ class Habitat:
         self.coolingPower = self.insidePower - self.hullPower + self.lightCollection.windowCoolingPower
 
         self.absorption = Absorption(inp, self.coolingPower, absFriction, conFriction, emFriction, self.shape.habRadius, self.shape.habVolume)
+        self.absFriction = self.absorption.absorptionFrictionPower / max(1e-10, self.coolingPower)
 
-        self.emission = Emission(inp, self.coolingPower, absFriction, conFriction, emFriction, self.absorption.massFlow, self.outsidePower, self.shape.habRadius)
+        self.emission = Emission(inp, self.coolingPower, self.absFriction, conFriction, emFriction, self.absorption.massFlow, self.outsidePower, self.shape.habRadius)
 
         self.connection = Connection(inp, self.shape.habRadius, self.emission.emissionSurface, self.emission.emissionRadius,
                                      self.absorption.massFlow, self.absorption.absorptionVolume, self.shape.habVolume, self.emission.connectionFrictionPower)

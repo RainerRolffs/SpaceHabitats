@@ -26,7 +26,6 @@ class Absorption:
                 if self.absorptionFrictionPower > (inp.maxFrictionFraction - conFriction - emFriction) * coolingPower:
                     self.isCoolingPossible = False
                     break
-            self.absFriction = self.absorptionFrictionPower / max(1e-10, coolingPower)
         else:
             self.absorptionReynolds = 8 * habRadius * self.massFlow / max(1e-10, self.absorptionSurface) / coolingHelper.viscosity
             self.absorptionVelocity = (8 * inp.pumpEfficiency * self.absorptionFrictionPower

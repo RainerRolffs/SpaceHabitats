@@ -5,11 +5,13 @@ import helpers
 
 class Input:
 
-    project = "default"
+    project = "default"  # a directory of this name is created, containting input.py and the result figures (in case of computing more than one power)
 
     # Habitat:
-    powers = helpers.LogRange(100, 1e3, 1e18)  # number of models, min. and max. habitat power; set to [power] to compute only one power
+    powers = helpers.LogRange(numberOfModels=100, minPower=1e3, maxPower=1e18)  # list of habitat powers to be computed
+    # set to [power] to compute only one power; (can be overriden by command-line argument "--power" or "--volume")
     powerPerVolume = 25  # power density (total electric and lighting consumption per habitat volume) [W/m**3]
+    # (overriden if both "--power" and "--volume" are given)
     interiorMassPerPower = 2.5  # [kg/W]
     aspectRatio = 1.3  # cylinder length to radius
     insidePowerFraction = 1  # fraction of the habitat power inside the shielding
@@ -83,8 +85,10 @@ class Input:
     # multiple runs:
     numberRuns = 3
     label = ["Liquid"]
+    iRun = 0
 
     def changeParameters(self, iRun):
+        self.iRun = iRun
         if iRun == 1:
             self.coolantType = helpers.CoolantType.Air
             self.label.append("Air")
