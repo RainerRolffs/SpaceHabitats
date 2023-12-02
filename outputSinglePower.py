@@ -2,6 +2,7 @@
 
 from habitat import Habitat
 from input import Input
+from sketch import Sketch
 
 
 def showResults(inp: Input, runResults: [[Habitat]]):
@@ -67,3 +68,8 @@ def showResults(inp: Input, runResults: [[Habitat]]):
             print("Complete lighting not possible")
 
         print("Cooling %.2e of habitat volume" % hab.connection.coolantVolumeFraction)
+
+        if hab.iRun == 0:
+            Sketch(rotational_radius=hab.shape.habRadius, cylinder_length_to_rot_radius=inp.aspectRatio,
+               light_radius=hab.lightRadius, collection_radius=hab.collectionRadius, emission_radius=hab.emission.emissionRadius,
+               emission_length=hab.connection.emissionLength).plot_shape()
