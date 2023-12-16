@@ -3,6 +3,7 @@
 from habitat import Habitat
 from input import Input
 from sketch import Sketch
+import matplotlib.pyplot as plt
 
 
 def showResults(inp: Input, runResults: [[Habitat]]):
@@ -70,6 +71,45 @@ def showResults(inp: Input, runResults: [[Habitat]]):
         print("Cooling %.2e of habitat volume" % hab.connection.coolantVolumeFraction)
 
         if hab.iRun == 0:
-            Sketch(rotational_radius=hab.shape.rotationalRadius, cylinder_length_to_rot_radius=inp.cylinderLengthToRotRadius,
-               light_radius=hab.lightRadius, collection_radius=hab.collectionRadius, emission_radius=hab.emission.emissionRadius,
-               emission_length=hab.connection.emissionLength).plot_shape()
+            #Sketch(rotational_radius=hab.shape.rotationalRadius, cylinder_length_to_rot_radius=inp.cylinderLengthToRotRadius,
+#               light_radius=hab.lightRadius, collection_radius=hab.collectionRadius, emission_radius=hab.emission.emissionRadius,
+#               emission_length=hab.connection.emissionLength).plot_shape()
+            showGravity(hab, inp, False)
+            showGravity(hab, inp, True)
+
+
+def showGravity(hab: Habitat, inp: Input, normalizedToGravWidth: bool):
+    fig, ax = plt.subplots()
+    ax.set_title("Gravity Distribution")
+    ax.set_xlabel("Gravity [m/s²]")
+
+    nbFloors = len(hab.gravity.groundRadii)
+    xvals = [hab.gravity.groundRadii[i] * inp.maxGravity / hab.shape.rotationalRadius for i in range(nbFloors)]
+
+    if normalizedToGravWidth:
+        widths = [xvals[i] - xvals[i+1] for i in range(nbFloors-1)]
+        widths.append(xvals[-1])
+        ax.set_ylabel("Distribution [1 / (m/s²)]")
+        lstyle = '-'
+    else:
+        widths = [1 for i in range(nbFloors)]
+        ax.set_ylabel("Distribution [fraction of total]")
+        lstyle = ''
+
+    totalGround = sum(hab.gravity.groundAreas)
+    yvals = [hab.gravity.groundAreas[i] / totalGround / widths[i] for i in range(nbFloors)]
+
+    ax.plot(xvals, yvals, label="Ground", linestyle=lstyle, marker='o')
+
+    xvals = [hab.gravity.floorRadii[i] * inp.maxGravity / hab.shape.rotationalRadius for i in range(nbFloors)]
+
+    totalVolume = sum(hab.gravity.floorVolumes)
+    yvals = [hab.gravity.floorVolumes[i] / totalVolume / widths[i] for i in range(nbFloors)]
+    ax.plot(xvals, yvals, label="Volume", linestyle=lstyle, marker='o')
+
+    totalHull = sum(hab.gravity.hullAreas)
+    yvals = [hab.gravity.hullAreas[i] / totalHull / widths[i] for i in range(nbFloors)]
+    ax.plot(xvals, yvals, label="Hull", linestyle=lstyle, marker='o')
+
+    ax.legend()
+    plt.show()

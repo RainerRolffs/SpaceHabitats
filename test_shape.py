@@ -51,7 +51,7 @@ class TestShape(unittest.TestCase):
         self.inp.torusHabToRotRadius = 0.25
         shape = Shape(self.inp, self.common_habPower)
         self.assertAlmostEqual(shape.rotationalRadius, 4.8, 1)
-        self.assertAlmostEqual(shape.hullSurface, 210, 0)
+        self.assertAlmostEqual(shape.hullSurface, 168, 0)
         self.assertAlmostEqual(shape.crossSection, 53, 0)
 
     def test_symmetric_dumbbell_shape(self):

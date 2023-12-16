@@ -4,20 +4,18 @@ import math
 
 
 class Gravity:
-    def __init__(self, inp: Input, rotationalRadius, otherRotationalRadius: float):
+    def __init__(self, inp: Input, rotationalRadius: float, otherRotationalRadius: float = 0):
         self.inp = inp
         self.rotationalRadius = rotationalRadius
         self.otherRotationalRadius = otherRotationalRadius
 
         self.rotationRate_rpm = (inp.maxGravity / rotationalRadius) ** .5 * 30 / math.pi
 
-        self.volumetricDistribution = []
-        volumetricReference = 0
-        self.groundDistribution = []
-        groundReference = 0
-        self.hullDistribution = []
-        hullReference = 0
+        self.floorVolumes = []
+        self.groundAreas = []
+        self.hullAreas = []
         self.groundRadii = []
+        self.floorRadii = []
 
         lowerRadius = rotationalRadius
         while lowerRadius > 0:
@@ -27,28 +25,28 @@ class Gravity:
                 upperRadius = 0
             floorRadius = (lowerRadius + upperRadius) / 2
 
+            self.groundRadii.append(lowerRadius)
+            self.floorRadii.append(floorRadius)
+
             groundArea = self.GroundArea(lowerRadius)
-            self.groundDistribution.append(groundArea * lowerRadius * inp.maxGravity / rotationalRadius)
-            groundReference += groundArea
+            self.groundAreas.append(groundArea)
 
             volume = height * self.GroundArea(floorRadius)
-            self.volumetricDistribution.append(volume * floorRadius * inp.maxGravity / rotationalRadius)
-            volumetricReference += volume
+            self.floorVolumes.append(volume)
 
-            if lowerRadius == rotationalRadius:
-                hullArea = self.ExtraHullArea(lowerRadius)
-                self.hullDistribution.append(hullArea * lowerRadius * inp.maxGravity / rotationalRadius)
-                hullReference += hullArea
-            hullArea = height * self.HullLength(floorRadius) * self.OrientationFactor(floorRadius)
-            self.hullDistribution.append(hullArea * floorRadius * inp.maxGravity / rotationalRadius)
-            hullReference += hullArea
+            hullArea = height * self.HullOrientedLength(floorRadius) + self.ExtraHullArea(lowerRadius)
+            self.hullAreas.append(hullArea)
 
-            self.groundRadii.append(lowerRadius)
             lowerRadius = upperRadius
 
-        self.averageVolumetricGravity = sum(self.volumetricDistribution) / volumetricReference
-        self.averageGroundGravity = sum(self.groundDistribution) / groundReference
-        self.averageHullGravity = sum(self.hullDistribution) / hullReference
+        self.floorVolumesTimesGrav = [self.floorVolumes[i] * self.floorRadii[i] / rotationalRadius * inp.maxGravity for i in range(len(self.floorVolumes))]
+        self.averageVolumetricGravity = sum(self.floorVolumesTimesGrav) / sum(self.floorVolumes)
+
+        self.groundAreasTimesGrav = [self.groundAreas[i] * self.groundRadii[i] / rotationalRadius * inp.maxGravity for i in range(len(self.groundAreas))]
+        self.averageGroundGravity = sum(self.groundAreasTimesGrav) / sum(self.groundAreas)
+
+        self.hullAreasTimesGrav = [self.hullAreas[i] * self.floorRadii[i] / rotationalRadius * inp.maxGravity for i in range(len(self.hullAreas))]
+        self.averageHullGravity = sum(self.hullAreasTimesGrav) / sum(self.hullAreas)
 
     def NextFloorHeight(self, radius):
         return self.inp.constantFloorHeight + self.inp.variableFloorHeight * self.rotationalRadius / radius
@@ -57,14 +55,152 @@ class Gravity:
         if self.inp.shapeType == ShapeType.Cylinder:
             return 2 * math.pi * radius * self.inp.cylinderLengthToRotRadius * self.rotationalRadius
 
+        elif self.inp.shapeType == ShapeType.Tube:
+            return self.TubeGroundArea(radius)
+
+        elif self.inp.shapeType == ShapeType.Oblate:
+            return 4 * math.pi * radius * self.inp.oblateMinorToRotRadius * math.sqrt(self.rotationalRadius**2 - radius**2)
+
+        elif self.inp.shapeType == ShapeType.Torus:
+            RH = self.inp.torusHabToRotRadius * self.rotationalRadius
+            if radius > self.rotationalRadius - 2 * RH:
+                return 4 * math.pi * radius * math.sqrt(RH**2 - (radius - self.rotationalRadius + RH)**2)
+            else:
+                return 0
+
+        elif self.inp.shapeType in [ShapeType.Dumbbell, ShapeType.DumbbellTube]:
+            result = self.DumbbellGroundArea(radius, isSmallerSphere=True) + self.DumbbellGroundArea(radius, isSmallerSphere=False)
+            if self.inp.shapeType == ShapeType.DumbbellTube:
+                result += self.TubeGroundArea(radius)
+            return result
+
+    def DumbbellGroundArea(self, radius: float, isSmallerSphere: bool):
+        a_parallel, a_perp, a_parMin = self.DumbbellGroundHalfAxes(radius, isSmallerSphere)
+        return (math.pi * (a_parallel - a_parMin) + 4 * a_parMin) * a_perp
+
     def ExtraHullArea(self, radius):
-        if (self.inp.shapeType == ShapeType.Cylinder) and (radius == self.rotationalRadius):
+        if radius == self.rotationalRadius:
             return self.GroundArea(radius)
+        else:
+            return 0
+
+    def HullOrientedLength(self, radius):
+        if self.inp.shapeType in [ShapeType.Dumbbell, ShapeType.DumbbellTube]:
+            result = self.DumbbellHullLength(radius, isSmallerSphere=True) * self.DumbbellOrientationFactor(radius, isSmallerSphere=True) \
+                + self.DumbbellHullLength(radius, isSmallerSphere=False) * self.DumbbellOrientationFactor(radius, isSmallerSphere=False)
+            if self.inp.shapeType == ShapeType.DumbbellTube:
+                result += self.TubeHullLength(radius) * 1
+            return result
+        else:
+            return self.HullLength(radius) * self.OrientationFactor(radius)
 
     def HullLength(self, radius):
         if self.inp.shapeType == ShapeType.Cylinder:
             return 4 * math.pi * radius
 
+        elif self.inp.shapeType == ShapeType.Tube:
+            return self.TubeHullLength(radius)
+
+        elif self.inp.shapeType == ShapeType.Oblate:
+            return 4 * math.pi * radius  # Same as sphere
+
+        elif self.inp.shapeType == ShapeType.Torus:
+            RH = self.inp.torusHabToRotRadius * self.rotationalRadius
+            if radius > self.rotationalRadius - 2 * RH:
+                return 4 * math.pi * radius
+            else:
+                return 0
+
+    def DumbbellHullLength(self, radius: float, isSmallerSphere: bool):
+        a_parallel, a_perp, a_parMin = self.DumbbellGroundHalfAxes(radius, isSmallerSphere)
+        if a_parMin == 0:
+            return 2 * math.pi * math.sqrt((a_parallel ** 2 + a_perp ** 2) / 2)
+        else:
+            return 4 * a_perp * ((a_parallel - a_parMin) ** 2 + (2 * radius) ** 2) ** .5 / (2 * radius)
+                    #2 * math.pi * math.sqrt(((a_parallel - a_parMin) ** 2 + a_perp ** 2) / 2)# 4 * a_perp * ((a_parallel - a_parMin) ** 2 + (2 * radius) ** 2) ** .5 / (2 * radius)
+
     def OrientationFactor(self, radius):
         if self.inp.shapeType == ShapeType.Cylinder:
             return 1
+
+        elif self.inp.shapeType == ShapeType.Tube:
+            return 1
+
+        elif self.inp.shapeType == ShapeType.Oblate:
+            return math.sqrt(1 + radius ** 2 * self.inp.oblateMinorToRotRadius ** 2 / (self.rotationalRadius ** 2 - radius ** 2))
+
+        elif self.inp.shapeType == ShapeType.Torus:
+            RH = self.inp.torusHabToRotRadius * self.rotationalRadius
+            if self.rotationalRadius - 2 * RH < radius < self.rotationalRadius:
+                return RH / math.sqrt(RH ** 2 - (radius - self.rotationalRadius + RH) ** 2)
+            else:
+                return 0
+
+    def DumbbellOrientationFactor(self, radius: float, isSmallerSphere: bool):
+        RH, RR = self.DumbbellRadii(isSmallerSphere)
+        if radius < RR - 2 * RH or radius > RR:
+            return 0
+        a_parallel, a_perp, a_parMin = self.DumbbellGroundHalfAxes(radius, isSmallerSphere)
+        if radius > 2 * RH - RR:
+            cos_beta = (radius ** 2 + RH ** 2 - (RR - RH) ** 2) / (2 * radius * RH)
+            sin_beta = math.sqrt(1 - cos_beta ** 2)
+            a_parEff = RH * sin_beta
+            return 2 * RH / (a_parallel + a_parEff)
+        else:
+            return 2 * RH / (a_parallel + a_parMin)
+
+    def DumbbellRadii(self, isSmallerSphere: bool):
+        if isSmallerSphere:
+            RH = self.inp.dumbbellMinorToRotRadius * self.rotationalRadius
+            RR = self.rotationalRadius
+        else:
+            RH = self.inp.dumbbellMajorToMinorRadius * self.inp.dumbbellMinorToRotRadius * self.rotationalRadius
+            RR = self.otherRotationalRadius
+        return RH, RR
+
+    def DumbbellGroundHalfAxes(self, radius: float, isSmallerSphere: bool):
+        RH, RR = self.DumbbellRadii(isSmallerSphere)
+        if radius < RR - 2 * RH or radius >= RR:
+            return 0, 0, 0
+        a_parallel = math.sqrt(RH ** 2 - (radius - RR + RH) ** 2)
+        if radius > 2 * RH - RR:
+            cos_alpha = (radius ** 2 + RR ** 2 - 2 * RR * RH) / (2 * radius * (RR - RH))
+            a_perp = radius * math.acos(cos_alpha)
+            a_parMin = 0
+        else:
+            a_perp = math.pi * radius
+            a_parMin = math.sqrt(RH ** 2 - (radius + RR - RH) ** 2)
+        return a_parallel, a_perp, a_parMin
+
+    def TubeGroundArea(self, radius: float):
+        RT = self.inp.tubeRadiusToRotRadius * self.rotationalRadius
+        result = 0
+        for innerRadius, outerRadius in self.TubeMinMaxRadii():
+            if innerRadius < radius <= outerRadius:
+                if radius < RT:
+                    result += math.pi * radius * (RT + math.sqrt(RT ** 2 - radius ** 2))
+                else:
+                    result += math.pi * radius * RT * math.asin(RT / radius)
+        return result
+
+    def TubeHullLength(self, radius: float):
+        RT = self.inp.tubeRadiusToRotRadius * self.rotationalRadius
+        result = 0
+        for innerRadius, outerRadius in self.TubeMinMaxRadii():
+            if innerRadius < radius <= outerRadius:
+                if radius < RT:
+                    result += 2 * math.pi * math.sqrt((radius ** 2 + (RT * math.asin(radius / RT)) ** 2) / 2)
+                else:
+                    result += 2 * math.pi * math.sqrt((RT ** 2 + (radius * math.asin(RT / radius)) ** 2) / 2)
+        return result
+
+    def TubeMinMaxRadii(self):  # [minRadius, maxRadius], [otherMinRadius, otherMaxRadius]
+        if self.inp.shapeType == ShapeType.Tube:
+            return [0, self.rotationalRadius], [0, self.rotationalRadius]
+        else:
+            smallerHabRadius = self.inp.dumbbellMinorToRotRadius * self.rotationalRadius
+            largerHabRadius = self.inp.dumbbellMajorToMinorRadius * smallerHabRadius
+            minRadius = max(0, 2 * largerHabRadius - self.otherRotationalRadius)
+            maxRadius = self.rotationalRadius - 2 * smallerHabRadius
+            otherMaxRadius = self.otherRotationalRadius - 2 * largerHabRadius
+            return [minRadius, maxRadius], [0, otherMaxRadius]
