@@ -34,7 +34,7 @@ class TestHabitat(unittest.TestCase):
         self.inp.shapeType = shape_type
         hab = Habitat(self.inp, 1e10, .01, .01, .01)
         volumeGravToShapeRatio = sum(hab.gravity.floorVolumes) / hab.shape.habVolume
-        hullGravToShapeRatio = sum(hab.gravity.hullAreas) / hab.shape.hullSurface
+        hullGravToShapeRatio = (sum(hab.gravity.hullAreas) + hab.gravity.extraHullArea) / hab.shape.hullSurface
         self.assertLess(abs(1 - volumeGravToShapeRatio), 0.1)
         self.assertLess(abs(1 - hullGravToShapeRatio), 0.1)
 

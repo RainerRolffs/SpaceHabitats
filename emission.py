@@ -4,7 +4,7 @@ from input import Input
 
 
 class Emission:
-    def __init__(self, inp: Input, coolingPower, absFriction, conFriction, emFriction, massFlow, outsidePower, habRadius):
+    def __init__(self, inp: Input, coolingPower, absFriction, conFriction, emFriction, massFlow, outsidePower, rotRadius, coRotRadius):
         coolingHelper = helpers.CoolingHelper(inp)
         self.absorptionFrictionPower = absFriction * coolingPower
         self.connectionFrictionPower = conFriction * (coolingPower + self.absorptionFrictionPower)
@@ -33,7 +33,9 @@ class Emission:
         self.emissionSurface = (1 + emFriction + outsidePower / max(1e-10, coolingPower)) \
                                * self.effectiveTemp ** 4 / (self.effectiveTemp ** 4 - inp.skyTemp ** 4) * basicEmissionSurface
         self.emissionSurfaceMass = self.emissionSurface * inp.emissionSurfaceDensity
-        self.emissionRadius = min(inp.maxRadiatorToHabRadius * habRadius, self.emissionSurface ** .5 / 4)
+        self.emissionRadius = min(inp.maxRadiatorToCorotRadius * coRotRadius,
+                                  min(inp.maxRadiatorToRotRadius * rotRadius,
+                                      self.emissionSurface ** .5 / 4))
 
         self.emissionReynolds = 8 * self.emissionRadius * massFlow / max(1e-10, self.emissionSurface) / coolingHelper.viscosity
         self.emissionVelocity = (8 * inp.pumpEfficiency * self.emissionFrictionPower

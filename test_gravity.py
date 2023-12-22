@@ -17,14 +17,13 @@ class TestGravity(unittest.TestCase):
         self.inp.cylinderLengthToRotRadius = 1
 
         gravity = Gravity(self.inp, 100)
-        self.assertAlmostEqual(gravity.rotationRate_rpm, 3, 1)
         self.assertEqual(len(gravity.groundRadii), 11)
         self.assertAlmostEqual(gravity.groundRadii[-1], 14.13, 2)
         self.assertEqual(len(gravity.groundAreas), 11)
         self.assertEqual(len(gravity.hullAreas), 11)
         self.assertAlmostEqual(gravity.averageVolumetricGravity, 6.48, 2)
         self.assertAlmostEqual(gravity.averageGroundGravity, 7.12, 2)
-        self.assertAlmostEqual(gravity.averageHullGravity, 7.97, 2)
+        self.assertAlmostEqual(gravity.averageHullGravity, 8.14, 2)
 
     def test_tube(self):
         self.inp.shapeType = ShapeType.Tube
@@ -39,7 +38,7 @@ class TestGravity(unittest.TestCase):
         self.assertAlmostEqual(gravity.TubeHullLength(20), 129, 0)
         self.assertAlmostEqual(gravity.averageVolumetricGravity, 4.55, 2)
         self.assertAlmostEqual(gravity.averageGroundGravity, 5.93, 2)
-        self.assertAlmostEqual(gravity.averageHullGravity, 5.11, 2)
+        self.assertAlmostEqual(gravity.averageHullGravity, 5.12, 2)
 
     def test_oblate(self):
         self.inp.shapeType = ShapeType.Oblate

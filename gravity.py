@@ -9,8 +9,6 @@ class Gravity:
         self.rotationalRadius = rotationalRadius
         self.otherRotationalRadius = otherRotationalRadius
 
-        self.rotationRate_rpm = (inp.maxGravity / rotationalRadius) ** .5 * 30 / math.pi
-
         self.floorVolumes = []
         self.groundAreas = []
         self.hullAreas = []
@@ -34,7 +32,7 @@ class Gravity:
             volume = height * self.GroundArea(floorRadius)
             self.floorVolumes.append(volume)
 
-            hullArea = height * self.HullOrientedLength(floorRadius) + self.ExtraHullArea(lowerRadius)
+            hullArea = height * self.HullOrientedLength(floorRadius)
             self.hullAreas.append(hullArea)
 
             lowerRadius = upperRadius
@@ -45,8 +43,10 @@ class Gravity:
         self.groundAreasTimesGrav = [self.groundAreas[i] * self.groundRadii[i] / rotationalRadius * inp.maxGravity for i in range(len(self.groundAreas))]
         self.averageGroundGravity = sum(self.groundAreasTimesGrav) / sum(self.groundAreas)
 
+        self.extraHullArea = self.GroundArea(rotationalRadius)
         self.hullAreasTimesGrav = [self.hullAreas[i] * self.floorRadii[i] / rotationalRadius * inp.maxGravity for i in range(len(self.hullAreas))]
-        self.averageHullGravity = sum(self.hullAreasTimesGrav) / sum(self.hullAreas)
+        self.hullAreasTimesGrav[0] += self.extraHullArea * inp.maxGravity
+        self.averageHullGravity = sum(self.hullAreasTimesGrav) / (sum(self.hullAreas) + self.extraHullArea)
 
     def NextFloorHeight(self, radius):
         return self.inp.constantFloorHeight + self.inp.variableFloorHeight * self.rotationalRadius / radius
@@ -77,12 +77,6 @@ class Gravity:
     def DumbbellGroundArea(self, radius: float, isSmallerSphere: bool):
         a_parallel, a_perp, a_parMin = self.DumbbellGroundHalfAxes(radius, isSmallerSphere)
         return (math.pi * (a_parallel - a_parMin) + 4 * a_parMin) * a_perp
-
-    def ExtraHullArea(self, radius):
-        if radius == self.rotationalRadius:
-            return self.GroundArea(radius)
-        else:
-            return 0
 
     def HullOrientedLength(self, radius):
         if self.inp.shapeType in [ShapeType.Dumbbell, ShapeType.DumbbellTube]:

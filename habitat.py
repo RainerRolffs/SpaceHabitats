@@ -9,6 +9,7 @@ from hullTransfer import HullTransfer
 from input import Input
 from light import LightCollection
 from shape import Shape
+from structure import Structure
 
 
 class Habitat:
@@ -21,11 +22,6 @@ class Habitat:
         self.emFriction = emFriction
 
         self.shape = Shape(inp, habPower)
-
-        if inp.shapeType in [ShapeType.Dumbbell, ShapeType.DumbbellTube]:
-            self.gravity = Gravity(inp, self.shape.rotationalRadius, self.shape.otherRotationalRadius)
-        else:
-            self.gravity = Gravity(inp, self.shape.rotationalRadius)
 
         self.effectiveHabRadius = (self.shape.crossSection / math.pi) ** .5
         self.effectiveHabLength = self.shape.habVolume / self.shape.crossSection
@@ -62,7 +58,9 @@ class Habitat:
         self.absorption = Absorption(inp, self.coolingPower, absFriction, conFriction, emFriction, self.effectiveHabRadius, self.shape.habVolume)
         self.absFriction = self.absorption.absorptionFrictionPower / max(1e-10, self.coolingPower)
 
-        self.emission = Emission(inp, self.coolingPower, self.absFriction, conFriction, emFriction, self.absorption.massFlow, self.outsidePower, self.effectiveHabRadius)
+        coRotRadius = (inp.stressPerDensity * self.shape.rotationalRadius / inp.maxGravity) ** .5
+        self.emission = Emission(inp, self.coolingPower, self.absFriction, conFriction, emFriction, self.absorption.massFlow,
+                                 self.outsidePower, rotRadius=self.shape.rotationalRadius, coRotRadius=coRotRadius)
 
         self.connection = Connection(inp, self.effectiveHabRadius, self.effectiveHabLength, self.emission.emissionSurface, self.emission.emissionRadius,
                                      self.absorption.massFlow, self.absorption.absorptionVolume, self.shape.habVolume, self.emission.connectionFrictionPower)
@@ -73,6 +71,7 @@ class Habitat:
             * self.coolingPower
         self.electricMassPerPower = inp.electricSurfaceDensity / inp.getIrradiation() / inp.electricEfficiency
         self.electricCoolingMass = self.electricMassPerPower * self.electricCoolingPower
+        self.electricHabMass = self.electricMassPerPower * self.habPower * self.electricFraction
         self.electricPower = self.habPower * self.electricFraction + self.electricCoolingPower
         self.electricArea = self.electricPower / inp.getIrradiation() / inp.electricEfficiency
         self.electricMass = self.electricArea * inp.electricSurfaceDensity
@@ -82,4 +81,21 @@ class Habitat:
 
         self.totalCoolingMass = self.absorption.absorptionCoolantMass + self.connection.connectionCoolantMass + self.emission.emissionCoolantMass \
             + self.absorption.absorptionSurfaceMass + self.connection.connectionSurfaceMass + self.emission.emissionSurfaceMass + self.electricCoolingMass
-        x = 0
+
+        if inp.shapeType in [ShapeType.Dumbbell, ShapeType.DumbbellTube]:
+            self.gravity = Gravity(inp, self.shape.rotationalRadius, self.shape.otherRotationalRadius)
+        else:
+            self.gravity = Gravity(inp, self.shape.rotationalRadius)
+        totalGround = sum(self.gravity.groundAreas)
+        totalInnerMass = self.shape.interiorMass + self.shape.airMass + self.absorption.absorptionSurfaceMass + self.absorption.absorptionCoolantMass
+        groundDistribution = {self.gravity.groundRadii[i]: self.gravity.groundAreas[i] / totalGround * totalInnerMass for i in range(len(self.gravity.groundRadii)) }
+        totalHull = sum(self.gravity.hullAreas)
+        hullDistribution = {self.gravity.floorRadii[i]: self.gravity.hullAreas[i] / totalHull * self.shape.hullMass for i in range(len(self.gravity.groundRadii)) }
+        self.structure = Structure(inp, rotationalRadius=self.shape.rotationalRadius, habVolume=self.shape.habVolume,
+                                        groundDistribution=groundDistribution, hullDistribution=hullDistribution,
+                                        radiatorRadius=self.emission.emissionRadius, lightRadius=self.lightRadius, electricRadius=self.collectionRadius,
+                                        radiatorMass=self.emission.emissionCoolantMass + self.emission.emissionSurfaceMass,
+                                        lightMass=self.lightCollection.lightMass, electricMass=self.electricMass)
+
+        self.totalMass = self.shape.interiorMass + self.shape.airMass + self.shape.hullMass + self.lightCollection.lightMass \
+                         + self.electricHabMass + self.totalCoolingMass + self.structure.totalStructuralMass

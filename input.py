@@ -32,6 +32,7 @@ class Input:
     stressPerDensity = 1e5  # tensile stress per density of structural material [Nm/kg]
     airPressure = 0.4  # [bar=1e5Pa]
     maxGravity = 10  # [m/s²]
+    horizontalSupport = True  # if floors and shielding are supported horizontally
 
     # Energy Collection:
     solarDistance = 1  # distance to the Sun [AU=1.5e11m]
@@ -48,6 +49,7 @@ class Input:
     surfaceIntensity = 500  # [W/m**2]
     lightSurfaceDensity = 1  # average surface density in light collectiom [kg/m**2]
     maxLightVolumeFraction = 0.2  # max. fraction of the habitat volume occupied by light channels
+    maxCoRotation = 1   # maximum size of the co-rotating collection system, as ratio of radius to co-rotational radius
 
     # Hull:
     hullSurfaceDensity = 5000  # [kg/m**2]
@@ -87,7 +89,7 @@ class Input:
     emissivity = 0.9  # emissivity of the radiator
     skyTemp = 3  # average temperature of counter-radiation [K]
     emissionSurfaceDensity = 5  # [kg/m**2]
-    maxRadiatorToHabRadius = 2   # maximum ratio of radiator radius to habitat radius
+    maxRadiatorToRotRadius = 2   # maximum ratio of radiator radius to rotational radius
     maxRadiatorToCorotRadius = 1   # maximum ratio of radiator radius to co-rotational radius
 
     # Friction:
