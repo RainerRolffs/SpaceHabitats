@@ -3,7 +3,7 @@ import argparse
 from hullTransfer import HullTransfer
 from shape import Shape
 from input import Input
-import output, outputSinglePower
+from output import Output
 from habitat import Habitat
 import optimizer
 
@@ -23,7 +23,7 @@ def computePowers():
 
 if __name__ == '__main__':
     # Set up command-line argument parsing
-    parser = argparse.ArgumentParser(description="A Physical Model of the Energy Flow in Space Habitats. Edit input.py for the input parameters. The following arguments override the powers parameter and, if both provided, also the powerPerVolume.")
+    parser = argparse.ArgumentParser(description="A Physical Model of Energy Flow and Rotation in Space Habitats. Edit input.py for the input parameters. The following arguments override the powers parameter and, if both provided, also the powerPerVolume.")
     parser.add_argument("--volume", type=float, help="a single habitat volume in m³", default=None)
     parser.add_argument("--power", type=float, help="a single habitat power in W", default=None)
 
@@ -53,7 +53,4 @@ if __name__ == '__main__':
         inp.changeParameters(iRun)
         runResults.append( computePowers() )
 
-    if len(inp.powers) == 1:
-        outputSinglePower.showResults(inp, runResults)
-    else:
-        output.writeResults(inp, runResults)
+    Output(inp, runResults)

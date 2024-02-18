@@ -38,15 +38,24 @@ class Gravity:
             lowerRadius = upperRadius
 
         self.floorVolumesTimesGrav = [self.floorVolumes[i] * self.floorRadii[i] / rotationalRadius * inp.maxGravity for i in range(len(self.floorVolumes))]
-        self.averageVolumetricGravity = sum(self.floorVolumesTimesGrav) / sum(self.floorVolumes)
+        if sum(self.floorVolumes) > 0:
+            self.averageVolumetricGravity = sum(self.floorVolumesTimesGrav) / sum(self.floorVolumes)
+        else:
+            self.averageVolumetricGravity = self.floorRadii[0] / rotationalRadius * inp.maxGravity
 
         self.groundAreasTimesGrav = [self.groundAreas[i] * self.groundRadii[i] / rotationalRadius * inp.maxGravity for i in range(len(self.groundAreas))]
-        self.averageGroundGravity = sum(self.groundAreasTimesGrav) / sum(self.groundAreas)
+        if sum(self.groundAreas) > 0:
+            self.averageGroundGravity = sum(self.groundAreasTimesGrav) / sum(self.groundAreas)
+        else:
+            self.averageGroundGravity = self.groundRadii[0] / rotationalRadius * inp.maxGravity
 
         self.extraHullArea = self.GroundArea(rotationalRadius)
         self.hullAreasTimesGrav = [self.hullAreas[i] * self.floorRadii[i] / rotationalRadius * inp.maxGravity for i in range(len(self.hullAreas))]
         self.hullAreasTimesGrav[0] += self.extraHullArea * inp.maxGravity
-        self.averageHullGravity = sum(self.hullAreasTimesGrav) / (sum(self.hullAreas) + self.extraHullArea)
+        if sum(self.hullAreas) + self.extraHullArea > 0:
+            self.averageHullGravity = sum(self.hullAreasTimesGrav) / (sum(self.hullAreas) + self.extraHullArea)
+        else:
+            self.averageHullGravity = self.hullAreas[0] / rotationalRadius * inp.maxGravity
 
     def NextFloorHeight(self, radius):
         return self.inp.constantFloorHeight + self.inp.variableFloorHeight * self.rotationalRadius / radius

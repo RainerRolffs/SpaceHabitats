@@ -27,8 +27,8 @@ class TestShape(unittest.TestCase):
 
         self.assertAlmostEqual(shape.hullMass, 15, 0)
         self.assertAlmostEqual(shape.hullVolume, 17, 0)
-        self.assertAlmostEqual(shape.interiorMass, 20, 0)
         self.assertAlmostEqual(shape.airMass, 120, 0)
+        self.assertAlmostEqual(shape.interiorMass, 120, 0)
 
     def test_tube_shape(self):
         self.inp.shapeType = ShapeType.Tube

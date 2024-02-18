@@ -87,15 +87,24 @@ class Habitat:
         else:
             self.gravity = Gravity(inp, self.shape.rotationalRadius)
         totalGround = sum(self.gravity.groundAreas)
-        totalInnerMass = self.shape.interiorMass + self.shape.airMass + self.absorption.absorptionSurfaceMass + self.absorption.absorptionCoolantMass
-        groundDistribution = {self.gravity.groundRadii[i]: self.gravity.groundAreas[i] / totalGround * totalInnerMass for i in range(len(self.gravity.groundRadii)) }
-        totalHull = sum(self.gravity.hullAreas)
-        hullDistribution = {self.gravity.floorRadii[i]: self.gravity.hullAreas[i] / totalHull * self.shape.hullMass for i in range(len(self.gravity.groundRadii)) }
-        self.structure = Structure(inp, rotationalRadius=self.shape.rotationalRadius, habVolume=self.shape.habVolume,
-                                        groundDistribution=groundDistribution, hullDistribution=hullDistribution,
-                                        radiatorRadius=self.emission.emissionRadius, lightRadius=self.lightRadius, electricRadius=self.collectionRadius,
-                                        radiatorMass=self.emission.emissionCoolantMass + self.emission.emissionSurfaceMass,
-                                        lightMass=self.lightCollection.lightMass, electricMass=self.electricMass)
+        self.totalInnerMass = self.shape.interiorMass + self.absorption.absorptionSurfaceMass + self.absorption.absorptionCoolantMass
+        if totalGround > 0:
+            groundDistribution = {self.gravity.groundRadii[i]: self.gravity.groundAreas[i] / totalGround * self.totalInnerMass for i in range(len(self.gravity.groundRadii)) }
+        else:
+            groundDistribution = {self.gravity.groundRadii[0]: self.totalInnerMass}
+        totalHull = sum(self.gravity.hullAreas) + self.gravity.extraHullArea
+        if totalHull > 0:
+            hullDistribution = {self.gravity.floorRadii[i]: self.gravity.hullAreas[i] / totalHull * self.shape.hullMass for i in range(len(self.gravity.groundRadii)) }
+            hullDistribution[self.shape.rotationalRadius] = self.gravity.extraHullArea / totalHull * self.shape.hullMass
+        else:
+            hullDistribution = {self.gravity.floorRadii[0]: self.shape.hullMass}
 
-        self.totalMass = self.shape.interiorMass + self.shape.airMass + self.shape.hullMass + self.lightCollection.lightMass \
+        self.structure = Structure(inp, rotationalRadius=self.shape.rotationalRadius, pressuredVolume=self.shape.habVolume + self.connection.connectionVolume + self.emission.emissionVolume,
+                                pressuredMass=self.shape.airMass + self.connection.connectionCoolantMass + self.emission.emissionCoolantMass,
+                                groundDistribution=groundDistribution, hullDistribution=hullDistribution,
+                                radiatorRadius=self.emission.emissionRadius, lightRadius=self.lightRadius, electricRadius=self.collectionRadius,
+                                radiatorMass=self.emission.emissionCoolantMass + self.emission.emissionSurfaceMass,
+                                lightMass=self.lightCollection.lightMass, electricMass=self.electricMass)
+
+        self.totalMass = self.shape.interiorMass + self.shape.hullMass + self.lightCollection.lightMass \
                          + self.electricHabMass + self.totalCoolingMass + self.structure.totalStructuralMass

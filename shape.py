@@ -62,5 +62,5 @@ class Shape:
 
         self.hullMass = self.hullSurface * inp.hullSurfaceDensity
         self.hullVolume = self.hullSurface * (inp.hullSurfaceDensity / inp.hullDensity + inp.gapThickness)
-        self.interiorMass = habPower * inp.interiorMassPerPower
         self.airMass = self.habVolume * inp.airPressure * 1.2
+        self.interiorMass = max(self.airMass, habPower * inp.interiorMassPerPower)

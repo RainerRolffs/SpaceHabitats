@@ -31,8 +31,8 @@ class Input:
     # Structural Integrity
     stressPerDensity = 1e5  # tensile stress per density of structural material [Nm/kg]
     airPressure = 0.4  # [bar=1e5Pa]
-    maxGravity = 10  # [m/s²]
-    horizontalSupport = True  # if floors and shielding are supported horizontally
+    maxGravity = 9.81  # [m/s²]
+    horizontalSupport = False  # if floors and shielding are supported horizontally
 
     # Energy Collection:
     solarDistance = 1  # distance to the Sun [AU=1.5e11m]
@@ -49,7 +49,7 @@ class Input:
     surfaceIntensity = 500  # [W/m**2]
     lightSurfaceDensity = 1  # average surface density in light collectiom [kg/m**2]
     maxLightVolumeFraction = 0.2  # max. fraction of the habitat volume occupied by light channels
-    maxCoRotation = 1   # maximum size of the co-rotating collection system, as ratio of radius to co-rotational radius
+    maxCollectionToCoRotRadius = 1   # maximum size of the co-rotating collection system, as ratio of radius to co-rotational radius
 
     # Hull:
     hullSurfaceDensity = 5000  # [kg/m**2]
@@ -95,25 +95,40 @@ class Input:
     # Friction:
     pumpEfficiency = 0.8  # efficiency of pump or fan
     minFrictionFactor = 0.005  # assumed minimum friction factor at very high Reynolds
-    isFrictionOptimized = True  # if friction fractions are optimized or fixed
+    isFrictionOptimized = False  # if friction fractions are optimized or fixed
     absorptionFrictionFraction = 0.01  # fraction of the habitat power devoted to overcome friction in heat absorption (not for Air)
     connectionFrictionFraction = 0.01  # fraction of the habitat power devoted to overcome friction in heat connection
     emissionFrictionFraction = 0.01  # fraction of the habitat power devoted to overcome friction in heat emission
     maxFrictionFraction = 0.5  # maximum fraction of the habitat power devoted to overcome friction
 
     # multiple runs:
-    numberRuns = 3
-    label = ["Liquid"]
+    numberRuns = 5
+    label = ["Cylinder"]
     iRun = 0
 
     def changeParameters(self, iRun):
         self.iRun = iRun
         if iRun == 1:
-            self.coolantType = CoolantType.Air
-            self.label.append("Air")
+            self.shapeType = ShapeType.Tube
+            self.label.append("Tube")
         elif iRun == 2:
-            self.coolantType = CoolantType.Vapor
-            self.label.append("Vapor")
+            self.shapeType = ShapeType.Oblate
+            self.label.append("Oblate Spheroid")
+        elif iRun == 3:
+            self.shapeType = ShapeType.Torus
+            self.label.append("Torus")
+        elif iRun == 4:
+            self.shapeType = ShapeType.Dumbbell
+            self.label.append("Dumbbell")
+        elif iRun == 5:
+            self.shapeType = ShapeType.DumbbellTube
+            self.tubeRadiusToRotRadius = 0.05
+            self.label.append("Dumbbell with Tube")
+        elif iRun == 6:
+            self.shapeType = ShapeType.DumbbellTube
+            self.tubeRadiusToRotRadius = 0.05
+            self.dumbbellMajorToMinorRadius = 2 ** (1/3)
+            self.label.append("Asymmetric Dumbbell with Tube")
 
     def getIrradiation(self):
         return 1360 / self.solarDistance ** 2 * (1 - self.shadedFraction)

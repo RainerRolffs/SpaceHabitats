@@ -105,9 +105,8 @@ class Sketch:
         ax.set_ylabel('Y axis [m]')
         ax.set_zlabel('Z axis (to Sun) [m]')
 
-        plt.show()
-
 
 if __name__ == '__main__':
     sketch = Sketch(4, 1.3, 7, 10, 6, 12)
     sketch.plot_shape()
+    plt.show()
