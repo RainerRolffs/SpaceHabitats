@@ -1,5 +1,7 @@
 # computations are started here
 import argparse
+import os
+
 from hullTransfer import HullTransfer
 from shape import Shape
 from input import Input
@@ -47,6 +49,8 @@ if __name__ == '__main__':
         s += ", modified by setting the volume to %.2e m³ (power is %.2e W)" % ((inp.powers[0] / inp.powerPerVolume), inp.powers[0])
 
     print(s)
+    os.system("mkdir " + inp.project)
+    os.system("copy input.py " + inp.project)
 
     runResults = []
     for iRun in range(inp.numberRuns):

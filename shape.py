@@ -5,7 +5,9 @@ import math
 
 class Shape:
     def __init__(self, inp: Input, habPower):
+        self.shapeType = inp.shapeType
         self.habVolume = habPower / inp.powerPerVolume
+        self.oppositeRotationalRadius = 0
 
         if inp.shapeType == ShapeType.Cylinder:
             self.rotationalRadius = (self.habVolume / inp.cylinderLengthToRotRadius / math.pi) ** (1 / 3)
@@ -39,7 +41,7 @@ class Shape:
                 * inp.dumbbellMajorToMinorRadius ** 3 * inp.dumbbellMinorToRotRadius * self.rotationalRadius)
 
             if inp.shapeType == ShapeType.Dumbbell:
-                self.otherRotationalRadius = (inp.dumbbellMajorToMinorRadius * inp.dumbbellMinorToRotRadius + self.massRatio * (
+                self.oppositeRotationalRadius = (inp.dumbbellMajorToMinorRadius * inp.dumbbellMinorToRotRadius + self.massRatio * (
                         1 - inp.dumbbellMinorToRotRadius)) * self.rotationalRadius
                 self.hullSurface = 4 * math.pi * self.rotationalRadius ** 2 * inp.dumbbellMinorToRotRadius ** 2 * (1 + inp.dumbbellMajorToMinorRadius ** 2)
                 self.crossSection = self.hullSurface / 4
@@ -49,7 +51,7 @@ class Shape:
                 denominator = 4 * math.pi / 3 * (1 + inp.dumbbellMajorToMinorRadius ** 3) * inp.dumbbellMinorToRotRadius ** 3 \
                     + math.pi * inp.tubeRadiusToRotRadius ** 2 * self.tubeLengthToRotRadius
                 self.rotationalRadius = (self.habVolume / denominator) ** (1 / 3)
-                self.otherRotationalRadius = (inp.dumbbellMajorToMinorRadius * inp.dumbbellMinorToRotRadius + self.massRatio * (
+                self.oppositeRotationalRadius = (inp.dumbbellMajorToMinorRadius * inp.dumbbellMinorToRotRadius + self.massRatio * (
                             1 - inp.dumbbellMinorToRotRadius)) * self.rotationalRadius
                 self.hullSurface = 2 * math.pi * self.rotationalRadius ** 2 * ( 2 * inp.dumbbellMinorToRotRadius ** 2 * (1 + inp.dumbbellMajorToMinorRadius ** 2)
                                 + inp.tubeRadiusToRotRadius * self.tubeLengthToRotRadius - inp.tubeRadiusToRotRadius ** 2)
@@ -57,8 +59,14 @@ class Shape:
                     + 2 * inp.tubeRadiusToRotRadius * self.tubeLengthToRotRadius)
         else:
             raise ValueError()
-        if (inp.shapeType in [ShapeType.Dumbbell, ShapeType.DumbbellTube]) and self.otherRotationalRadius > self.rotationalRadius:
+        if (inp.shapeType in [ShapeType.Dumbbell, ShapeType.DumbbellTube]) and self.oppositeRotationalRadius > self.rotationalRadius:
             raise Exception("Dumbbell too asymmetric")
+        self.cylinderLength = self.rotationalRadius * inp.cylinderLengthToRotRadius
+        self.tubeRadius = self.rotationalRadius * inp.tubeRadiusToRotRadius
+        self.oblateRadius = self.rotationalRadius * inp.oblateMinorToRotRadius
+        self.torusHabRadius = self.rotationalRadius * inp.torusHabToRotRadius
+        self.dumbbellMinorRadius = self.rotationalRadius * inp.dumbbellMinorToRotRadius
+        self.dumbbellMajorRadius = self.dumbbellMinorRadius * inp.dumbbellMajorToMinorRadius
 
         self.hullMass = self.hullSurface * inp.hullSurfaceDensity
         self.hullVolume = self.hullSurface * (inp.hullSurfaceDensity / inp.hullDensity + inp.gapThickness)

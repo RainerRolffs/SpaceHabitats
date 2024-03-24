@@ -4,10 +4,10 @@ import math
 
 
 class Gravity:
-    def __init__(self, inp: Input, rotationalRadius: float, otherRotationalRadius: float = 0):
+    def __init__(self, inp: Input, rotationalRadius: float, oppositeRotationalRadius: float = 0):
         self.inp = inp
         self.rotationalRadius = rotationalRadius
-        self.otherRotationalRadius = otherRotationalRadius
+        self.oppositeRotationalRadius = oppositeRotationalRadius
 
         self.floorVolumes = []
         self.groundAreas = []
@@ -15,6 +15,7 @@ class Gravity:
         self.groundRadii = []
         self.floorRadii = []
 
+        self.numberFloors = 0
         lowerRadius = rotationalRadius
         while lowerRadius > 0:
             height = self.NextFloorHeight(lowerRadius)
@@ -31,6 +32,8 @@ class Gravity:
 
             volume = height * self.GroundArea(floorRadius)
             self.floorVolumes.append(volume)
+            if volume > 0 or groundArea > 0:
+                self.numberFloors += 1
 
             hullArea = height * self.HullOrientedLength(floorRadius)
             self.hullAreas.append(hullArea)
@@ -158,7 +161,7 @@ class Gravity:
             RR = self.rotationalRadius
         else:
             RH = self.inp.dumbbellMajorToMinorRadius * self.inp.dumbbellMinorToRotRadius * self.rotationalRadius
-            RR = self.otherRotationalRadius
+            RR = self.oppositeRotationalRadius
         return RH, RR
 
     def DumbbellGroundHalfAxes(self, radius: float, isSmallerSphere: bool):
@@ -203,7 +206,7 @@ class Gravity:
         else:
             smallerHabRadius = self.inp.dumbbellMinorToRotRadius * self.rotationalRadius
             largerHabRadius = self.inp.dumbbellMajorToMinorRadius * smallerHabRadius
-            minRadius = max(0, 2 * largerHabRadius - self.otherRotationalRadius)
+            minRadius = max(0, 2 * largerHabRadius - self.oppositeRotationalRadius)
             maxRadius = self.rotationalRadius - 2 * smallerHabRadius
-            otherMaxRadius = self.otherRotationalRadius - 2 * largerHabRadius
+            otherMaxRadius = self.oppositeRotationalRadius - 2 * largerHabRadius
             return [minRadius, maxRadius], [0, otherMaxRadius]

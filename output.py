@@ -1,6 +1,5 @@
 ﻿# model results are plotted here
 
-import os
 import matplotlib.pyplot as plt
 
 from habitat import Habitat
@@ -16,15 +15,11 @@ class Output:
         self.firstHab = self.habitats[0]
         self.xvals = [hab.habPower for hab in self.habitats]
 
-        os.system("mkdir " + inp.project)
-        os.system("copy input.py " + inp.project)
-
-        self.printResultsForFirstPower()
+        self.printShortResultsForFirstPower()
+        # self.printResultsForFirstPower()
 
         if len(inp.powers) == 1:
-            Sketch(rotational_radius=self.firstHab.shape.rotationalRadius, cylinder_length_to_rot_radius=inp.cylinderLengthToRotRadius,
-                   light_radius=self.firstHab.lightRadius, collection_radius=self.firstHab.collectionRadius, emission_radius=self.firstHab.emission.emissionRadius,
-                   emission_length=self.firstHab.connection.emissionLength).plot_shape()
+            self.showSketchForFirstPower(onlyFirstRun=False)
             self.showGravityForFirstPower(normalizedToGravWidth=False, onlyFirstRun=False, withVolume=False, withHull=False)
             self.showGravityForFirstPower(True, True, True, True)
 
@@ -130,6 +125,20 @@ class Output:
             print("Total Cooling %.2e kg/W" % (hab.totalCoolingMass / hab.habPower))
             print("Light channels %.2e of habitat volume" % (hab.lightCollection.lightVolume / hab.shape.habVolume))
             print("Cooling %.2e of habitat volume" % hab.connection.coolantVolumeFraction)
+
+    def printShortResultsForFirstPower(self):
+        for res in self.runResults:
+            hab = res[0]
+            if self.inp.numberRuns > 1:
+                print("\n\nFirst power (%.2e W) of model run #" % hab.habPower + str(hab.iRun) + " " + self.inp.label[hab.iRun] + ":")
+            elif len(self.inp.powers) > 1:
+                print("\nFirst power (%.2e W):" % hab.habPower)
+
+            print("Hull Mass %.2e kg" % hab.shape.hullMass)
+            print("Structural Mass %.2e kg" % hab.structure.totalStructuralMass)
+            print("Rotational Radius %.2f m" % hab.shape.rotationalRadius)
+            print("Number of floors %i" % hab.gravity.numberFloors)
+            print("Average Ground Gravity %.2f m/s^2" % hab.gravity.averageGroundGravity)
 
     def showCurve(self, ax, y: str, lab: str, cont="", perPower=True, lstyle="-"):
         yvals = []
@@ -367,6 +376,15 @@ class Output:
         ax.legend()
      #   fig.savefig(inp.project + "\\HullAndStructuralMasses.pdf")
 
+    def showSketchForFirstPower(self, onlyFirstRun: bool):
+        for iRun in range(self.inp.numberRuns):
+            if onlyFirstRun and iRun > 0:
+                break
+            hab = self.runResults[iRun][0]
+            Sketch(shape=hab.shape,
+                   light_radius=hab.lightRadius, collection_radius=hab.collectionRadius, emission_radius=hab.emission.emissionRadius,
+                   emission_length=hab.connection.emissionLength).show_habitat()
+
     def showGravityForFirstPower(self, normalizedToGravWidth: bool, onlyFirstRun: bool, withVolume: bool, withHull: bool):
         fig, ax = plt.subplots()
         if not withVolume and not withHull:
@@ -395,23 +413,24 @@ class Output:
             else:
                 widths = [1 for i in range(nbFloors)]
                 ax.set_ylabel("Distribution [fraction of total]")
-                lstyle = ''
+                lstyle = '--'
 
             totalGround = sum(hab.gravity.groundAreas)
-            yvals = [hab.gravity.groundAreas[i] / totalGround / widths[i] for i in range(nbFloors)]
+            if totalGround > 0:
+                yvals = [hab.gravity.groundAreas[i] / totalGround / widths[i] for i in range(nbFloors)]
 
-            if not withVolume and not withHull:
-                groundLabel = ""
-            else:
-                groundLabel = "Ground "
-            ax.plot(xvals, yvals, label=groundLabel+labeladdition, linestyle=lstyle, marker='x')
+                if not withVolume and not withHull:
+                    groundLabel = ""
+                else:
+                    groundLabel = "Ground "
+                ax.plot(xvals, yvals, label=groundLabel+labeladdition, linestyle=lstyle, marker='x')
 
             xvals = [hab.gravity.floorRadii[i] * self.inp.maxGravity / hab.shape.rotationalRadius for i in range(nbFloors)]
 
             if withVolume:
                 totalVolume = sum(hab.gravity.floorVolumes)
                 yvals = [hab.gravity.floorVolumes[i] / totalVolume / widths[i] for i in range(nbFloors)]
-                ax.plot(xvals, yvals, label="Volume "+labeladdition, linestyle=lstyle, marker='x')
+                ax.plot(xvals, yvals, label="Volume "+labeladdition, linestyle=lstyle, marker='o')
 
             if withHull:
                 totalHull = sum(hab.gravity.hullAreas)

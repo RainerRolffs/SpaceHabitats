@@ -16,6 +16,7 @@ class Habitat:
 
     def __init__(self, inp: Input, habPower, absFriction, conFriction, emFriction, hullPowerPerSurface=None):
         self.iRun = inp.iRun
+
         self.habPower = habPower
         self.absFriction = absFriction
         self.conFriction = conFriction
@@ -83,7 +84,7 @@ class Habitat:
             + self.absorption.absorptionSurfaceMass + self.connection.connectionSurfaceMass + self.emission.emissionSurfaceMass + self.electricCoolingMass
 
         if inp.shapeType in [ShapeType.Dumbbell, ShapeType.DumbbellTube]:
-            self.gravity = Gravity(inp, self.shape.rotationalRadius, self.shape.otherRotationalRadius)
+            self.gravity = Gravity(inp, self.shape.rotationalRadius, self.shape.oppositeRotationalRadius)
         else:
             self.gravity = Gravity(inp, self.shape.rotationalRadius)
         totalGround = sum(self.gravity.groundAreas)
