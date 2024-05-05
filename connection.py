@@ -48,7 +48,11 @@ class Connection:
         if self.connectionAreaFraction > 1 or (inp.coolantType != helpers.CoolantType.Air and
                                                self.coolantVolumeFraction > inp.maxCoolantVolumeFraction):
             self.isCoolingPossible = False
-    
+            if self.connectionAreaFraction > 1:
+                self.report = "Connection cross section (%.1e m²) would surpass habitat cross section" % self.connectionCrossSection
+            else:
+                self.report = "Interior coolant volume (%.1e m³) would surpass maximum fraction of habitat volume " % (absorptionVolume + interiorConnectionVolume)
+
     def computeConnectionVelocity(self, viscosity, density):
         isConFrictionFactorMin = (self.connectionFrictionPower > 3.918e-10 / self.inp.minFrictionFactor ** 19 * viscosity ** 5
                                   * self.effectiveLength / self.inp.pumpEfficiency / max(1e-10, self.massFlow * density) ** 2)

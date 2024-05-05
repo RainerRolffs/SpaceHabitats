@@ -30,6 +30,7 @@ class Output:
             self.plot_Length()
             self.plot_PowerFraction()
             self.plot_StructuralMass()
+            self.plot_MassPerVolume()
             self.print_Limits()
 
             if inp.numberRuns > 1:  # for different parameters
@@ -261,35 +262,51 @@ class Output:
         xvals = [hab.shape.habVolume for hab in self.habitats]
 
         fig, ax = plt.subplots()
-        ax.set_title("Ratio of Mass to Habitat Volume")
+        ax.set_title("Structural mass components")
         ax.set_xlabel("Interior Volume [m³]")
         ax.set_ylabel("Mass per Volume [kg/m³]")
         ax.loglog()
-        ax.plot(xvals, [hab.structure.pressureReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Air & Coolant", linestyle="-", color="magenta")
-        ax.plot(xvals, [hab.structure.pressureStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Pressure Containment", linestyle="--", color="magenta")
+        ax.plot(xvals, [hab.structure.pressureStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Pressure Containment", linestyle="-", color="magenta")
+        ax.plot(xvals, [hab.structure.pressureReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Air & Coolant", linestyle="--", color="magenta")
 
-        ax.plot(xvals, [hab.structure.interiorReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Interior", linestyle="-", color="green")
-        ax.plot(xvals, [hab.structure.interiorStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Interior Support", linestyle="--", color="green")
+        ax.plot(xvals, [hab.structure.interiorStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Interior Support", linestyle="-", color="green")
+        ax.plot(xvals, [hab.structure.interiorReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Interior & Absorption Cooling", linestyle="--", color="green")
 
-        ax.plot(xvals, [hab.structure.hullReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Hull", linestyle="-", color="red")
-        ax.plot(xvals, [hab.structure.hullStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Hull Support", linestyle="--", color="red")
+        ax.plot(xvals, [hab.structure.hullStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Hull Support", linestyle="-", color="red")
+        ax.plot(xvals, [hab.structure.hullReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Hull", linestyle="--", color="red")
 
-        ax.plot(xvals, [hab.structure.radiatorReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Radiator", linestyle="-", color="black")
-        ax.plot(xvals, [hab.structure.radiatorStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Radiator Support", linestyle="--", color="black")
+        ax.plot(xvals, [hab.structure.radiatorStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Radiator Support", linestyle="-", color="black")
+        ax.plot(xvals, [hab.structure.radiatorReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Radiator", linestyle="--", color="black")
 
-        ax.plot(xvals, [hab.structure.lightReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Mirrors", linestyle="-", color="yellow")
-        ax.plot(xvals, [hab.structure.lightStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Mirror Support", linestyle="--", color="yellow")
+        ax.plot(xvals, [hab.structure.lightStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Mirror Support", linestyle="-", color="yellow")
+        ax.plot(xvals, [hab.structure.lightReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Co-rotating Mirrors", linestyle="--", color="yellow")
 
-        ax.plot(xvals, [hab.structure.electricReferenceMass / hab.shape.habVolume for hab in self.habitats], label="PV", linestyle="-", color="blue")
-        ax.plot(xvals, [hab.structure.electricStructuralMass / hab.shape.habVolume for hab in self.habitats], label="PV Support", linestyle="--", color="blue")
+        ax.plot(xvals, [hab.structure.electricStructuralMass / hab.shape.habVolume for hab in self.habitats], label="PV Support", linestyle="-", color="blue")
+        ax.plot(xvals, [hab.structure.electricReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Co-rotating PV", linestyle="--", color="blue")
 
-        ax.plot(xvals, [hab.structure.totalReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Total Reference", linestyle="-", color="orange")
-        ax.plot(xvals, [hab.structure.totalStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Total Structural", linestyle="--", color="orange")
-        ax.plot(xvals, [hab.totalMass / hab.shape.habVolume for hab in self.habitats], label="Total Habitat", linestyle="-", color="black")
+#        ax.plot(xvals, [hab.structure.totalStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Total Structural", linestyle="-", color="orange")
+#        ax.plot(xvals, [hab.structure.totalReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Total Reference", linestyle="--", color="orange")
 
+        plt.subplots_adjust(right=0.6)
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
 
     #    fig.savefig(inp.project + "\\structuralMasses.pdf")
+
+    def plot_MassPerVolume(self):
+        xvals = [hab.shape.habVolume for hab in self.habitats]
+
+        fig, ax = plt.subplots()
+        ax.set_title("Main mass components")
+        ax.set_xlabel("Interior Volume [m³]")
+        ax.set_ylabel("Mass per Volume [kg/m³]")
+        ax.loglog()
+        ax.plot(xvals, [hab.shape.interiorMass / hab.shape.habVolume for hab in self.habitats], label="Interior", linestyle="-", color="green")
+        ax.plot(xvals, [hab.shape.hullMass / hab.shape.habVolume for hab in self.habitats], label="Hull", linestyle="-", color="red")
+        ax.plot(xvals, [hab.totalCoolingMass / hab.shape.habVolume for hab in self.habitats], label="Cooling", linestyle="-", color="blue")
+        ax.plot(xvals, [hab.structure.totalStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Structural", linestyle="-", color="orange")
+        ax.plot(xvals, [hab.totalMass / hab.shape.habVolume for hab in self.habitats], label="Total Habitat", linestyle=":", color="black")
+        plt.subplots_adjust(right=0.75)
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
 
     @staticmethod
     def getLinestyle(iRun: int):
@@ -354,11 +371,11 @@ class Output:
             habitats = self.runResults[iRun]
             for res in habitats:
                 if not res.isCoolingPossible:
-                    print("No complete cooling above %.2e W" % res.habPower)
+                    print("No complete cooling above %.2e W - %s" % (res.habPower, res.coolingReport))
                     break
             for res in habitats:
                 if not res.isCompleteLighting:
-                    print("No complete lighting above %.2e W" % res.habPower)
+                    print("No complete lighting above %.2e W - %s" % (res.habPower, res.lightingReport))
                     break
 
     def plot_HullAndStructuralMasses(self):
@@ -381,7 +398,7 @@ class Output:
             if onlyFirstRun and iRun > 0:
                 break
             hab = self.runResults[iRun][0]
-            Sketch(shape=hab.shape,
+            Sketch(shape=hab.shape, corot_limit=hab.structure.coRotationalRadius,
                    light_radius=hab.lightRadius, collection_radius=hab.collectionRadius, emission_radius=hab.emission.emissionRadius,
                    emission_length=hab.connection.emissionLength).show_habitat()
 

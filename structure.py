@@ -17,7 +17,7 @@ class Structure:
         self.rotationRate_rpm = self.rotationRate * 30 / math.pi  # [rounds per minute]
         self.coRotationalRadius = (inp.stressPerDensity * rotationalRadius / inp.maxGravity) ** .5
         self.pressureReferenceMass = pressuredMass
-        self.pressureStructuralMass = 2 * inp.airPressure / inp.stressPerDensity * pressuredVolume
+        self.pressureStructuralMass = 2 * inp.airPressure * 1e5 / inp.stressPerDensity * pressuredVolume
 
         horizontal = self.inp.horizontalSupport and self.inp.shapeType in [ShapeType.Cylinder, ShapeType.Oblate, ShapeType.Torus]
         self.interiorReferenceMass = sum(groundDistribution.values())

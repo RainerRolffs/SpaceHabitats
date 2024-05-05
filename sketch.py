@@ -5,13 +5,14 @@ from shape import Shape
 
 
 class Sketch:
-    def __init__(self, shape: Shape, light_radius, collection_radius, emission_radius, emission_length):
+    def __init__(self, shape: Shape, light_radius, collection_radius, emission_radius, emission_length, corot_limit):
         self.shape = shape
         
         self.light_radius = light_radius
         self.emission_radius = emission_radius
         self.emission_length = emission_length
         self.collection_radius = collection_radius
+        self.corot_limit = corot_limit
 
         self.theta = np.linspace(0, 2 * np.pi, 100)
 
@@ -195,6 +196,11 @@ class Sketch:
         minZ = self.minZ()
         # Plotting the axis as a red line
         ax.plot([0, 0], [0, 0], [-self.minZ() - self.emission_length, self.minZ() + self.emission_length], color='red')
+        # Plotting the cricitcal co-rotational radius
+        x_ring = self.corot_limit * np.cos(self.theta)
+        y_ring = self.corot_limit * np.sin(self.theta)
+        z_ring = np.zeros_like(self.theta)  # Ring lies in the XY plane, so z is zero
+        ax.plot(x_ring, y_ring, z_ring, linestyle='--', color='red')
 
         # Plotting the planes
         x_plane = np.linspace(-self.emission_radius, self.emission_radius, 2)
@@ -224,7 +230,7 @@ class Sketch:
         ax.set_zlabel('Z axis (to Sun) [m]')
 
     def maskXY_habitat(self, x, y):
-        if self.shape.shapeType == ShapeType.Cylinder or self.shape == ShapeType.Oblate:
+        if self.shape.shapeType == ShapeType.Cylinder or self.shape.shapeType == ShapeType.Oblate:
             return x ** 2 + y ** 2 > self.shape.rotationalRadius ** 2
         elif self.shape.shapeType == ShapeType.Tube:
             return np.logical_or(x ** 2 + y ** 2 > self.shape.rotationalRadius ** 2,
@@ -273,6 +279,6 @@ if __name__ == '__main__':
         dumbbellMinorRadius = 0.2
         dumbbellMajorRadius = dumbbellMinorRadius * 2 ** (1/3)
 
-    sketch = Sketch(shape=ShapeMock(), light_radius=.8, collection_radius=.9, emission_radius=.6, emission_length=1.2)
+    sketch = Sketch(shape=ShapeMock(), light_radius=.8, collection_radius=.9, emission_radius=.6, emission_length=1.2, corot_limit=1.3)
     sketch.show_habitat()
     plt.show()

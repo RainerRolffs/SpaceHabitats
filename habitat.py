@@ -42,6 +42,10 @@ class Habitat:
         self.isCompleteLighting = (self.lightCollection.lightVolume < inp.maxLightVolumeFraction * self.shape.habVolume) \
             and (self.lightCollection.windowArea < self.shape.hullSurface)
         if not self.isCompleteLighting:
+            if self.lightCollection.windowArea > self.shape.hullSurface:
+                self.lightingReport = "Window area (%.1e m²) would surpass hull area" % self.lightCollection.windowArea
+            else:
+                self.lightingReport = "Light channel volume (%.1e m³) would surpass maximum fraction of habitat volume" % self.lightCollection.lightVolume
             self.electricFraction = 1 - (1 - inp.electricFraction) * min(
                 (inp.maxLightVolumeFraction * self.shape.habVolume) / self.lightCollection.lightVolume,
                 self.shape.hullSurface / self.lightCollection.windowArea)
@@ -67,6 +71,10 @@ class Habitat:
                                      self.absorption.massFlow, self.absorption.absorptionVolume, self.shape.habVolume, self.emission.connectionFrictionPower)
 
         self.isCoolingPossible = self.absorption.isCoolingPossible and self.connection.isCoolingPossible
+        if not self.absorption.isCoolingPossible:
+            self.coolingReport = self.absorption.report
+        elif not self.connection.isCoolingPossible:
+            self.coolingReport = self.connection.report
 
         self.electricCoolingPower = ((1 + self.absFriction) * (1 + self.conFriction) * (1 + self.emFriction) - 1) \
             * self.coolingPower
