@@ -43,7 +43,7 @@ class Emission:
 
         self.emissionCrossSection = massFlow / coolingHelper.coolantDensity / max(1e-10, self.emissionVelocity)
         self.emissionPipeDiameter = 8 * self.emissionRadius * self.emissionCrossSection / max(1e-10, self.emissionSurface)
-        self.emissionPipeNumber = self.emissionSurface / math.pi / max(1e-10, self.emissionPipeDiameter) / 2 / self.emissionRadius
+        self.emissionPipeNumber = self.emissionSurface / math.pi / max(1e-10, self.emissionPipeDiameter) / 2 / max(1e-10, self.emissionRadius)
 
         if inp.coolantType == helpers.CoolantType.Vapor:
             liquidEmissionReynolds = 8 * self.emissionRadius * massFlow / max(1e-10, self.emissionSurface) / 1e-3

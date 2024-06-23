@@ -1,6 +1,7 @@
 ﻿# model results are plotted here
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FixedLocator, FuncFormatter
 
 from habitat import Habitat
 from input import Input
@@ -31,13 +32,14 @@ class Output:
             self.plot_PowerFraction()
             self.plot_StructuralMass()
             self.plot_MassPerVolume()
-            self.print_Limits()
 
             if inp.numberRuns > 1:  # for different parameters
                 self.plot_CoolingMasses()
                 self.plot_Frictions()
                 self.plot_Volumes()
                 self.plot_HullAndStructuralMasses()
+
+            self.print_Limits()
 
         plt.show()
 
@@ -266,6 +268,16 @@ class Output:
         ax.set_xlabel("Interior Volume [m³]")
         ax.set_ylabel("Mass per Volume [kg/m³]")
         ax.loglog()
+
+        categories = ['XS', 'S', 'M', 'L', 'XL']
+        volumes = [1600, 1.6e5, 1.6e7, 1.6e9, 1.6e11]  # [m³]
+
+        # Create a secondary x-axis
+        secax = ax.secondary_xaxis('top')
+        secax.set_xticks(volumes)
+        secax.set_xticklabels(categories)
+        secax.set_xlabel('Size Category')
+
         ax.plot(xvals, [hab.structure.pressureStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Pressure Containment", linestyle="-", color="magenta")
         ax.plot(xvals, [hab.structure.pressureReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Air & Coolant", linestyle="--", color="magenta")
 
@@ -370,13 +382,51 @@ class Output:
                 print("\n" + self.inp.label[iRun]+":")
             habitats = self.runResults[iRun]
             for res in habitats:
+                if res.shape.hullMass < res.shape.interiorMass:
+                    print("Hull mass is larger than interior mass (%.1e kg) below %.1e m³ / %.1e W" % (res.shape.interiorMass, res.shape.habVolume, res.habPower))
+                    break
+            for res in habitats:
+                if res.structure.rotationRate_rpm < 3:
+                    print("Rotational rate is larger than 3rpm below %.1e m³ / %.1e W" % (res.shape.habVolume, res.habPower))
+                    break
+            for res in habitats:
+                if res.totalCoolingMass > res.shape.interiorMass:
+                    print("Cooling mass surpasses the interior mass at %.1e m³ / %.1e W" % (res.shape.habVolume, res.habPower))
+                    break
+
+            for res in habitats:
                 if not res.isCoolingPossible:
-                    print("No complete cooling above %.2e W - %s" % (res.habPower, res.coolingReport))
+                    print("No complete cooling above %.1e m³ / %.1e W - %s" % (res.shape.habVolume, res.habPower, res.coolingReport))
                     break
             for res in habitats:
                 if not res.isCompleteLighting:
-                    print("No complete lighting above %.2e W - %s" % (res.habPower, res.lightingReport))
+                    print("No complete lighting above %.1e m³ / %.1e W - %s" % (res.shape.habVolume, res.habPower, res.lightingReport))
                     break
+            for res in habitats:
+                if res.structure.coRotationalLightFraction < 1:
+                    print("No complete co-rotation of mirrors above %.1e m³ / %.1e W" % (res.shape.habVolume, res.habPower))
+                    break
+            for res in habitats:
+                if res.shape.rotationalRadius > res.structure.coRotationalRadius:
+                    print("Rotational radius surpasses critical co-rotational radius at %.1e m  %.1e m³ / %.1e W" % (res.shape.rotationalRadius, res.shape.habVolume, res.habPower))
+                    break
+            for res in habitats:
+                if res.structure.totalStructuralMass > 0.1 * res.shape.interiorMass:
+                    print("Structural mass surpasses 0.1 of interior mass at %.1e m³ / %.1e W" % (res.shape.habVolume, res.habPower))
+                    break
+            for res in habitats:
+                if res.structure.totalStructuralMass > res.shape.interiorMass:
+                    print("Structural mass surpasses the interior mass at %.1e m³ / %.1e W" % (res.shape.habVolume, res.habPower))
+                    break
+            oldInteriorMassFraction = 0
+            for res in habitats:
+                interiorMassFraction = res.shape.interiorMass / res.totalMass
+                if interiorMassFraction < oldInteriorMassFraction:
+                    print(s)
+                    break
+                else:
+                    oldInteriorMassFraction = interiorMassFraction
+                    s = "Maximum interior mass fraction (%.3f) / minimum mass per volume at %.1e m³ / %.1e W" % (interiorMassFraction, res.shape.habVolume, res.habPower)
 
     def plot_HullAndStructuralMasses(self):
         fig, ax = plt.subplots()

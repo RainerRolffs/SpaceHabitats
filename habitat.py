@@ -39,8 +39,9 @@ class Habitat:
                                                self.lightPower,
                                                self.effectiveHabRadius,
                                                self.shape.crossSection)
-        self.isCompleteLighting = (self.lightCollection.lightVolume < inp.maxLightVolumeFraction * self.shape.habVolume) \
-            and (self.lightCollection.windowArea < self.shape.hullSurface)
+        self.isCompleteLighting = self.lightCollection.isUnconcentratedLightingPossible or \
+            ((self.lightCollection.lightVolume < inp.maxLightVolumeFraction * self.shape.habVolume) \
+            and (self.lightCollection.windowArea < self.shape.hullSurface))
         if not self.isCompleteLighting:
             if self.lightCollection.windowArea > self.shape.hullSurface:
                 self.lightingReport = "Window area (%.1e m²) would surpass hull area" % self.lightCollection.windowArea
@@ -117,3 +118,5 @@ class Habitat:
 
         self.totalMass = self.shape.interiorMass + self.shape.hullMass + self.lightCollection.lightMass \
                          + self.electricHabMass + self.totalCoolingMass + self.structure.totalStructuralMass
+
+        self.populationAt40kWperPerson = self.habPower / 4e4

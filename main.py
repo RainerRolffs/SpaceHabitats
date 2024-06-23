@@ -54,6 +54,7 @@ if __name__ == '__main__':
 
     runResults = []
     for iRun in range(inp.numberRuns):
+        print("Computing model number %i" % iRun)
         inp.changeParameters(iRun)
         runResults.append( computePowers() )
 
