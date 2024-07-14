@@ -8,7 +8,7 @@ class Input:
     project = "default"  # a directory of this name is created, containting input.py and the result figures (in case of computing more than one power)
 
     # Habitat:
-    powers = LogRange(numberOfModels=100, minPower=1e3, maxPower=1e18)  # list of habitat powers to be computed
+    powers = LogRange(numberOfModels=500, minPower=1e3, maxPower=1e18)  # list of habitat powers to be computed
     # set to [power] to compute only one power; (can be overriden by command-line argument "--power" or "--volume")
     powerPerVolume = 25  # power density (total electric and lighting consumption per habitat volume) [W/m**3]
     # (overriden if both "--power" and "--volume" are given)
@@ -32,7 +32,8 @@ class Input:
     stressPerDensity = 1e5  # tensile stress per density of structural material [Nm/kg]
     airPressure = 0.4  # [bar=1e5Pa]
     maxGravity = 9.81  # [m/s²]
-    horizontalSupport = False  # if floors and shielding are supported horizontally
+    distanceBetweenVerticalCables = 10  # [m]
+    bridgeThickness = 1  # [m]
 
     # Energy Collection:
     solarDistance = 1  # distance to the Sun [AU=1.5e11m]
@@ -102,7 +103,7 @@ class Input:
     maxFrictionFraction = 0.5  # maximum fraction of the habitat power devoted to overcome friction
 
     # multiple runs:
-    numberRuns = 5
+    numberRuns = 1
     label = ["Cylinder"]
     iRun = 0
 

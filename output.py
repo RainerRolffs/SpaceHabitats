@@ -1,7 +1,6 @@
 ﻿# model results are plotted here
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FixedLocator, FuncFormatter
 
 from habitat import Habitat
 from input import Input
@@ -269,14 +268,7 @@ class Output:
         ax.set_ylabel("Mass per Volume [kg/m³]")
         ax.loglog()
 
-        categories = ['XS', 'S', 'M', 'L', 'XL']
-        volumes = [1600, 1.6e5, 1.6e7, 1.6e9, 1.6e11]  # [m³]
-
-        # Create a secondary x-axis
-        secax = ax.secondary_xaxis('top')
-        secax.set_xticks(volumes)
-        secax.set_xticklabels(categories)
-        secax.set_xlabel('Size Category')
+        self.AxisForSizeCategories(ax)
 
         ax.plot(xvals, [hab.structure.pressureStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Pressure Containment", linestyle="-", color="magenta")
         ax.plot(xvals, [hab.structure.pressureReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Air & Coolant", linestyle="--", color="magenta")
@@ -301,8 +293,17 @@ class Output:
 
         plt.subplots_adjust(right=0.6)
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
-
     #    fig.savefig(inp.project + "\\structuralMasses.pdf")
+
+    def AxisForSizeCategories(self, ax):
+        categories = ['XS', 'S', 'M', 'L', 'XL']
+        volumes = [1600, 1.6e5, 1.6e7, 1.6e9, 1.6e11]  # [m³]
+        # Create a secondary x-axis
+        secax = ax.secondary_xaxis('top')
+        secax.set_xticks(volumes)
+        secax.set_xticklabels(categories)
+        secax.tick_params(axis="x", direction="in", pad=-22)
+
 
     def plot_MassPerVolume(self):
         xvals = [hab.shape.habVolume for hab in self.habitats]
@@ -312,6 +313,8 @@ class Output:
         ax.set_xlabel("Interior Volume [m³]")
         ax.set_ylabel("Mass per Volume [kg/m³]")
         ax.loglog()
+        self.AxisForSizeCategories(ax)
+
         ax.plot(xvals, [hab.shape.interiorMass / hab.shape.habVolume for hab in self.habitats], label="Interior", linestyle="-", color="green")
         ax.plot(xvals, [hab.shape.hullMass / hab.shape.habVolume for hab in self.habitats], label="Hull", linestyle="-", color="red")
         ax.plot(xvals, [hab.totalCoolingMass / hab.shape.habVolume for hab in self.habitats], label="Cooling", linestyle="-", color="blue")
