@@ -59,10 +59,11 @@ class Structure:
         if self.electricReferenceMass > 0:
             electricDistribution = {self.CircularEffectiveRadius(i, N, minRadius=lightRadius, maxRadius=maxRadius): self.electricReferenceMass / N for i in range(N)}
             self.electricStructuralMass = self.ComputeStructuralMass(electricDistribution, isHorizontalPossible=True)
-            self.coRotationalElectricFraction = self.electricReferenceMass / self.electricReferenceMass
+            self.coRotationalElectricFraction = self.electricReferenceMass / electricMass
             self.electricFraction = self.electricStructuralMass / self.electricReferenceMass
         else:
             self.electricStructuralMass = 0
+            self.coRotationalElectricFraction = 0
             self.electricFraction = 0
 
         self.totalReferenceMass = self.pressureReferenceMass + self.interiorReferenceMass + self.hullReferenceMass \

@@ -4,9 +4,9 @@ import math
 
 
 class Shape:
-    def __init__(self, inp: Input, habPower):
+    def __init__(self, inp: Input, habVolume):
+        self.habVolume = habVolume
         self.shapeType = inp.shapeType
-        self.habVolume = habPower / inp.powerPerVolume
         self.oppositeRotationalRadius = 0
 
         if inp.shapeType == ShapeType.Cylinder:
@@ -36,8 +36,8 @@ class Shape:
         elif (inp.shapeType == ShapeType.Dumbbell) or (inp.shapeType == ShapeType.DumbbellTube):
             self.rotationalRadius = 1 / inp.dumbbellMinorToRotRadius * (self.habVolume * 3 / 4
                                                     / math.pi / (1 + inp.dumbbellMajorToMinorRadius ** 3)) ** (1 / 3)
-            self.massRatio = (inp.hullSurfaceDensity + inp.interiorMassPerPower * inp.powerPerVolume / 3 * inp.dumbbellMinorToRotRadius * self.rotationalRadius) \
-                / (inp.hullSurfaceDensity * inp.dumbbellMajorToMinorRadius ** 2 + inp.interiorMassPerPower * inp.powerPerVolume / 3
+            self.massRatio = (inp.hullSurfaceDensity + inp.interiorMassPerPerson / inp.volumePerPerson / 3 * inp.dumbbellMinorToRotRadius * self.rotationalRadius) \
+                / (inp.hullSurfaceDensity * inp.dumbbellMajorToMinorRadius ** 2 + inp.interiorMassPerPerson / inp.volumePerPerson / 3
                 * inp.dumbbellMajorToMinorRadius ** 3 * inp.dumbbellMinorToRotRadius * self.rotationalRadius)
 
             if inp.shapeType == ShapeType.Dumbbell:
@@ -71,4 +71,4 @@ class Shape:
         self.hullMass = self.hullSurface * inp.hullSurfaceDensity
         self.hullVolume = self.hullSurface * (inp.hullSurfaceDensity / inp.hullDensity + inp.gapThickness)
         self.airMass = self.habVolume * inp.airPressure * 1.2
-        self.interiorMass = max(self.airMass, habPower * inp.interiorMassPerPower)
+        self.interiorMass = max(self.airMass, self.habVolume / inp.volumePerPerson * inp.interiorMassPerPerson)

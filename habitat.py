@@ -18,11 +18,12 @@ class Habitat:
         self.iRun = inp.iRun
 
         self.habPower = habPower
+        self.population = habPower / inp.powerPerPerson
         self.absFriction = absFriction
         self.conFriction = conFriction
         self.emFriction = emFriction
 
-        self.shape = Shape(inp, habPower)
+        self.shape = Shape(inp, self.population * inp.volumePerPerson)
 
         self.effectiveHabRadius = (self.shape.crossSection / math.pi) ** .5
         self.effectiveHabLength = self.shape.habVolume / self.shape.crossSection
@@ -118,5 +119,3 @@ class Habitat:
 
         self.totalMass = self.shape.interiorMass + self.shape.hullMass + self.lightCollection.lightMass \
                          + self.electricHabMass + self.totalCoolingMass + self.structure.totalStructuralMass
-
-        self.populationAt40kWperPerson = self.habPower / 4e4

@@ -62,16 +62,16 @@ class CoolingHelper:
                 self.absorptionSurfacePerPower = 1 / inp.absorptionTransferCoeff / maxTempDiffHabCoolant
     
 
-def LogRange(numberOfModels, minPower, maxPower):
+def LogRange(numberOfModels, minValue, maxValue):
     if numberOfModels == 1:
-        return [minPower]
-    dLog = (math.log(maxPower) - math.log(minPower)) / (numberOfModels - 1)
-    logPower = math.log(minPower)
-    powers = []
+        return [minValue]
+    dLog = (math.log(maxValue) - math.log(minValue)) / (numberOfModels - 1)
+    logValue = math.log(minValue)
+    values = []
     for i in range(numberOfModels):
-        powers.append(math.exp(logPower))
-        logPower += dLog
-    return powers
+        values.append(math.exp(logValue))
+        logValue += dLog
+    return values
 
 
 def frictionFactor(reynolds, minFrictionFactor):

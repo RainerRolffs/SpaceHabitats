@@ -5,14 +5,14 @@ from helpers import ShapeType, LogRange, CoolantType
 
 class Input:
 
-    project = "default"  # a directory of this name is created, containting input.py and the result figures (in case of computing more than one power)
+    project = "default"  # a directory of this name is created, containing a copy of this input.py (and figures, if set in output.py)
 
     # Habitat:
-    powers = LogRange(numberOfModels=500, minPower=1e3, maxPower=1e18)  # list of habitat powers to be computed
-    # set to [power] to compute only one power; (can be overriden by command-line argument "--power" or "--volume")
-    powerPerVolume = 25  # power density (total electric and lighting consumption per habitat volume) [W/m**3]
-    # (overriden if both "--power" and "--volume" are given)
-    interiorMassPerPower = 2.5  # [kg/W]
+    population = LogRange(numberOfModels=500, minValue=1e3/4e4, maxValue=1e18/4e4)  # [people], can be a number or list of numbers
+    # (can be overriden by command-line arguments "--power", "--volume", or "--population")
+    volumePerPerson = 1600  # [m³]
+    powerPerPerson = 4e4  # [W]
+    interiorMassPerPerson = 1e5  # [kg]
     insidePowerFraction = 1  # fraction of the habitat power inside the shielding
 
     # Geometry
@@ -103,33 +103,39 @@ class Input:
     maxFrictionFraction = 0.5  # maximum fraction of the habitat power devoted to overcome friction
 
     # multiple runs:
-    numberRuns = 1
-    label = ["Cylinder"]
-    iRun = 0
+    numberRuns = 1  # set e.g. to 6 to compute examples with changeParameters
+    iRun = 0  # initialized
+    label = []  # initialized
 
-    def changeParameters(self, iRun):
+    def changeParameters(self, iRun):  # only used if numberRuns > 1
         self.iRun = iRun
-        if iRun == 1:
-            self.shapeType = ShapeType.Tube
-            self.label.append("Tube")
-        elif iRun == 2:
-            self.shapeType = ShapeType.Oblate
-            self.label.append("Oblate Spheroid")
-        elif iRun == 3:
-            self.shapeType = ShapeType.Torus
-            self.label.append("Torus")
-        elif iRun == 4:
+        self.hullSurfaceDensity = 5000
+        if iRun == 0:
+            self.hullSurfaceDensity = 500
+            self.population = 1
             self.shapeType = ShapeType.Dumbbell
-            self.label.append("Dumbbell")
-        elif iRun == 5:
+            self.label.append("XS - Dumbbell")
+        elif iRun == 1:
+            self.population = 100
+            self.shapeType = ShapeType.Tube
+            self.label.append("S - Tube")
+        elif iRun == 2:
+            self.population = 1e4
+            self.shapeType = ShapeType.Torus
+            self.label.append("M - Torus")
+        elif iRun == 3:
+            self.population = 1e6
             self.shapeType = ShapeType.DumbbellTube
-            self.tubeRadiusToRotRadius = 0.05
-            self.label.append("Dumbbell with Tube")
-        elif iRun == 6:
-            self.shapeType = ShapeType.DumbbellTube
-            self.tubeRadiusToRotRadius = 0.05
             self.dumbbellMajorToMinorRadius = 2 ** (1/3)
-            self.label.append("Asymmetric Dumbbell with Tube")
+            self.label.append("L - Asymmetric Dumbbell with Tube")
+        elif iRun == 4:
+            self.population = 1e8
+            self.shapeType = ShapeType.Cylinder
+            self.label.append("XL - Cylinder")
+        elif iRun == 5:
+            self.population = 6e6
+            self.shapeType = ShapeType.Oblate
+            self.label.append("Lowest mass - Sphere")
 
     def getIrradiation(self):
         return 1360 / self.solarDistance ** 2 * (1 - self.shadedFraction)

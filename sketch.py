@@ -15,10 +15,12 @@ class Sketch:
         self.corot_limit = corot_limit
 
         self.theta = np.linspace(0, 2 * np.pi, 100)
+        self.fig = plt.figure()
+        self.title = ""
 
     def show_habitat(self):
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
+        ax = self.fig.add_subplot(111, projection='3d')
+        ax.set_title(self.title)
 
         if self.shape.shapeType == ShapeType.Cylinder:
             self.plot_cylinder(ax)

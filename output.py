@@ -8,6 +8,10 @@ from sketch import Sketch
 
 
 class Output:
+    showFigures = True  # if figures are shown
+    saveFigures = False  # if figures are saved in the project directory
+    printOnlyShortResults = False  # if a short version of the results is printed
+
     def __init__(self, inp: Input, runResults: [[Habitat]]):
         self.inp = inp
         self.runResults = runResults
@@ -15,10 +19,10 @@ class Output:
         self.firstHab = self.habitats[0]
         self.xvals = [hab.habPower for hab in self.habitats]
 
-        self.printShortResultsForFirstPower()
-        # self.printResultsForFirstPower()
+        self.printResultsForFirstPower()
 
-        if len(inp.powers) == 1:
+        if inp.population.__class__ is not list:
+
             self.showSketchForFirstPower(onlyFirstRun=False)
             self.showGravityForFirstPower(normalizedToGravWidth=False, onlyFirstRun=False, withVolume=False, withHull=False)
             self.showGravityForFirstPower(True, True, True, True)
@@ -40,15 +44,23 @@ class Output:
 
             self.print_Limits()
 
-        plt.show()
+        if self.showFigures:
+            plt.show()
 
     def printResultsForFirstPower(self):
         for res in self.runResults:
             hab = res[0]
+            print("\nFirst size (%.2e W, %.2e m³, %.2e people)" % (hab.habPower, hab.shape.habVolume, hab.population))
             if self.inp.numberRuns > 1:
-                print("\n\nFirst power of model run #" + str(hab.iRun) + " " + self.inp.label[hab.iRun] + ":")
-            elif len(self.inp.powers) > 1:
-                print("\nFirst power:")
+                print(" of model run #" + str(hab.iRun) + " " + self.inp.label[hab.iRun] + ":")
+
+            print("Hull Mass %.2e kg" % hab.shape.hullMass)
+            print("Structural Mass %.2e kg" % hab.structure.totalStructuralMass)
+            print("Rotational Radius %.2f m" % hab.shape.rotationalRadius)
+            print("Number of floors %i" % hab.gravity.numberFloors)
+            print("Average Ground Gravity %.2f m/s^2" % hab.gravity.averageGroundGravity)
+            if self.printOnlyShortResults:
+                continue
 
             print("\nHabitat Power %.2e W" % hab.habPower)
             print("\t Light %.2e W" % hab.lightPower)
@@ -65,7 +77,7 @@ class Output:
             print("\nTotal Mass %.2e kg" % hab.totalMass)
             print("Hull Mass %.2e kg" % hab.shape.hullMass)
             print("Habitat Interior %.2e kg" % hab.shape.interiorMass)
-            print("Air %.2e kg" % hab.shape.airMass)
+            print("\t Air %.2e kg" % hab.shape.airMass)
             print("Electricity Generation %.2e kg" % hab.electricMass)
             print("Light Collection %.2e kg" % hab.lightCollection.lightMass)
             print("Total Cooling %.2e kg" % hab.totalCoolingMass)
@@ -109,38 +121,27 @@ class Output:
             print("Connection %.2e m³" % hab.connection.connectionVolume)
             print("Emission %.2e m³" % hab.emission.emissionVolume)
 
-            if not hab.isCoolingPossible:
-                print("Cooling of the habitat is not possible!")
-                if not hab.absorption.isCoolingPossible:
-                    print("\t (Friction power would be too large)")
-                if not hab.connection.isCoolingPossible:
-                    print("\t (Coolant would take up too much space)")
+            if hab.lightCollection.isUnconcentratedLightingPossible:
+                print("Unconcentrated lighting is possible.")
             if not hab.isCompleteLighting:
                 print("Complete lighting not possible (would take up too much space)")
+            if hab.structure.coRotationalLightFraction < 1:
+                print("No complete co-rotation of mirrors")
+
+            if hab.insidePower == hab.hullPower:
+                print("Natural cooling is possible.")
+            if not hab.isCoolingPossible:
+                print("Cooling of the habitat is not possible! - " + hab.coolingReport)
 
             print("Cooling %.2e of habitat volume" % hab.connection.coolantVolumeFraction)
 
-            print("Hull : %.2e kg/W" % (hab.shape.hullMass / hab.habPower))
-            print("Habitat Interior %.2e kg/W" % (hab.shape.interiorMass / hab.habPower))
-            print("Electricity Generation %.2e kg/W" % (hab.electricMass / hab.habPower))
-            print("Light Collection %.2e kg/W" % (hab.lightCollection.lightMass / hab.habPower))
-            print("Total Cooling %.2e kg/W" % (hab.totalCoolingMass / hab.habPower))
+            print("Hull : %.2e kg/person" % (hab.shape.hullMass / hab.population))
+            print("Habitat Interior %.2e kg/person" % (hab.shape.interiorMass / hab.population))
+            print("Electricity Generation %.2e kg/person" % (hab.electricMass / hab.population))
+            print("Light Collection %.2e kg/person" % (hab.lightCollection.lightMass / hab.population))
+            print("Total Cooling %.2e kg/person" % (hab.totalCoolingMass / hab.population))
             print("Light channels %.2e of habitat volume" % (hab.lightCollection.lightVolume / hab.shape.habVolume))
             print("Cooling %.2e of habitat volume" % hab.connection.coolantVolumeFraction)
-
-    def printShortResultsForFirstPower(self):
-        for res in self.runResults:
-            hab = res[0]
-            if self.inp.numberRuns > 1:
-                print("\n\nFirst power (%.2e W) of model run #" % hab.habPower + str(hab.iRun) + " " + self.inp.label[hab.iRun] + ":")
-            elif len(self.inp.powers) > 1:
-                print("\nFirst power (%.2e W):" % hab.habPower)
-
-            print("Hull Mass %.2e kg" % hab.shape.hullMass)
-            print("Structural Mass %.2e kg" % hab.structure.totalStructuralMass)
-            print("Rotational Radius %.2f m" % hab.shape.rotationalRadius)
-            print("Number of floors %i" % hab.gravity.numberFloors)
-            print("Average Ground Gravity %.2f m/s^2" % hab.gravity.averageGroundGravity)
 
     def showCurve(self, ax, y: str, lab: str, cont="", perPower=True, lstyle="-"):
         yvals = []
@@ -177,7 +178,8 @@ class Output:
         self.showCurve(ax, "emission.emissionCoolantMass", "Emission Coolant", "cool", True, ":")
         self.showCurve(ax, "structure.totalStructuralMass", "Structure")
         ax.legend()
-     #   fig.savefig(inp.project + "\\masses.pdf")
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\masses.pdf")
 
     def plot_Area(self):
         fig, ax = plt.subplots()
@@ -198,7 +200,8 @@ class Output:
         self.showCurve(ax, "absorption.absorptionCrossSection", "Absorption Cross Section", "cool", True, "--")
         self.showCurve(ax, "connection.connectionCrossSection", "Connection Cross Section", "cool", True, "--")
         ax.legend()
-    #    fig.savefig(inp.project + "\\surfaces.pdf")
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\surfaces.pdf")
 
     def plot_Length(self):
         fig, ax = plt.subplots()
@@ -215,7 +218,8 @@ class Output:
         self.showCurve(ax, "emission.emissionRadius", "Emission Radius", "cool")
         self.showCurve(ax, "connection.totalLength", "Total Connection", "cool")
         ax.legend()
-    #    fig.savefig(inp.project + "\\lengths.pdf")
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\lengths.pdf")
 
     def plot_PowerFraction(self):
         fig, ax = plt.subplots()
@@ -235,7 +239,8 @@ class Output:
         self.showCurve(ax, "connection.connectionFrictionPower", "Connection Friction", "cool", True, ":")
         self.showCurve(ax, "emission.emissionFrictionPower", "Emission Friction", "cool", True, ":")
         ax.legend()
-    #    fig.savefig(inp.project + "\\powers.pdf")
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\powers.pdf")
 
     def plot_StructuralFraction(self):
         fig, ax = plt.subplots()
@@ -257,7 +262,8 @@ class Output:
         ax.plot(self.xvals, [hab.structure.electricFraction for hab in self.habitats], label="Electric", linestyle="-")
         print("\t Electric" + ": %.2e" % self.habitats[0].structure.electricFraction)
         ax.legend()
-    #    fig.savefig(inp.project + "\\structuralFractions.pdf")
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\structuralFractions.pdf")
 
     def plot_StructuralMass(self):
         xvals = [hab.shape.habVolume for hab in self.habitats]
@@ -268,7 +274,7 @@ class Output:
         ax.set_ylabel("Mass per Volume [kg/m³]")
         ax.loglog()
 
-        self.AxisForSizeCategories(ax)
+        self.AxisForPopulation(ax)
 
         ax.plot(xvals, [hab.structure.pressureStructuralMass / hab.shape.habVolume for hab in self.habitats], label="Pressure Containment", linestyle="-", color="magenta")
         ax.plot(xvals, [hab.structure.pressureReferenceMass / hab.shape.habVolume for hab in self.habitats], label="Air & Coolant", linestyle="--", color="magenta")
@@ -293,16 +299,16 @@ class Output:
 
         plt.subplots_adjust(right=0.6)
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
-    #    fig.savefig(inp.project + "\\structuralMasses.pdf")
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\structuralMasses.pdf")
 
-    def AxisForSizeCategories(self, ax):
-        categories = ['XS', 'S', 'M', 'L', 'XL']
-        volumes = [1600, 1.6e5, 1.6e7, 1.6e9, 1.6e11]  # [m³]
+    def AxisForPopulation(self, ax):
         # Create a secondary x-axis
-        secax = ax.secondary_xaxis('top')
-        secax.set_xticks(volumes)
-        secax.set_xticklabels(categories)
-        secax.tick_params(axis="x", direction="in", pad=-22)
+        secax = ax.secondary_xaxis('top', functions=(lambda x: x / self.inp.volumePerPerson, lambda x: x * self.inp.volumePerPerson))
+        secax.set_xscale('log')  # Set secondary x-axis to logarithmic scale
+        secax.set_xlabel('Population')
+
+        plt.subplots_adjust(top=0.85)  # Increase top margin to fit the title if using a tight layout
 
 
     def plot_MassPerVolume(self):
@@ -313,7 +319,7 @@ class Output:
         ax.set_xlabel("Interior Volume [m³]")
         ax.set_ylabel("Mass per Volume [kg/m³]")
         ax.loglog()
-        self.AxisForSizeCategories(ax)
+        self.AxisForPopulation(ax)
 
         ax.plot(xvals, [hab.shape.interiorMass / hab.shape.habVolume for hab in self.habitats], label="Interior", linestyle="-", color="green")
         ax.plot(xvals, [hab.shape.hullMass / hab.shape.habVolume for hab in self.habitats], label="Hull", linestyle="-", color="red")
@@ -322,6 +328,8 @@ class Output:
         ax.plot(xvals, [hab.totalMass / hab.shape.habVolume for hab in self.habitats], label="Total Habitat", linestyle=":", color="black")
         plt.subplots_adjust(right=0.75)
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\massPerVolume.pdf")
 
     @staticmethod
     def getLinestyle(iRun: int):
@@ -340,10 +348,10 @@ class Output:
         ax.loglog()
         print("\nCooling Mass per Power [kg/W]")
         for iRun in range(self.inp.numberRuns):
-            habitats = self.runResults[iRun]
             self.showCurve(ax, "totalCoolingMass", "Cooling Mass " + self.inp.label[iRun], "cool", True, self.getLinestyle(iRun))
         ax.legend()
-#       fig.savefig(inp.project + "\\totalCoolingMass.pdf")
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\totalCoolingMass.pdf")
 
     def plot_Frictions(self):
         fig, ax = plt.subplots()
@@ -358,7 +366,8 @@ class Output:
             self.showCurve(ax, "conFriction", "Connection " + self.inp.label[iRun], "cool", False, self.getLinestyle(iRun))
             self.showCurve(ax, "emFriction", "Emission " + self.inp.label[iRun], "cool", False, self.getLinestyle(iRun))
         ax.legend()
-#        fig.savefig(self.inp.project + "\\optimizedFriction.pdf")
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\optimizedFriction.pdf")
 
     def plot_Volumes(self):
         fig, ax = plt.subplots()
@@ -377,7 +386,8 @@ class Output:
             self.showCurve(ax, "connection.connectionVolume", "Connection " + self.inp.label[iRun], "cool", True, self.getLinestyle(iRun))
             self.showCurve(ax, "emission.emissionVolume", "Emission " + self.inp.label[iRun], "cool", True, self.getLinestyle(iRun))
         ax.legend()
-#        fig.savefig(self.inp.project + "\\volumes.pdf")
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\volumes.pdf")
 
     def print_Limits(self):
         for iRun in range(self.inp.numberRuns):
@@ -386,40 +396,51 @@ class Output:
             habitats = self.runResults[iRun]
             for res in habitats:
                 if res.shape.hullMass < res.shape.interiorMass:
-                    print("Hull mass is larger than interior mass (%.1e kg) below %.1e m³ / %.1e W" % (res.shape.interiorMass, res.shape.habVolume, res.habPower))
+                    print("Hull mass is larger than interior mass (%.1e kg) below pop. %.1e / %.1e m³ / %.1e W" % (res.shape.interiorMass, res.population, res.shape.habVolume, res.habPower))
                     break
             for res in habitats:
                 if res.structure.rotationRate_rpm < 3:
-                    print("Rotational rate is larger than 3rpm below %.1e m³ / %.1e W" % (res.shape.habVolume, res.habPower))
+                    print("Rotational rate is larger than 3rpm below pop. %.1e / %.1e m³ / %.1e W" % (res.population, res.shape.habVolume, res.habPower))
                     break
+
             for res in habitats:
-                if res.totalCoolingMass > res.shape.interiorMass:
-                    print("Cooling mass surpasses the interior mass at %.1e m³ / %.1e W" % (res.shape.habVolume, res.habPower))
+                if res.insidePower > res.hullPower:
+                    print("No natural cooling above pop. %.1e / %.1e m³ / %.1e W" % (res.population, res.shape.habVolume, res.habPower))
                     break
 
             for res in habitats:
                 if not res.isCoolingPossible:
-                    print("No complete cooling above %.1e m³ / %.1e W - %s" % (res.shape.habVolume, res.habPower, res.coolingReport))
+                    print("No complete cooling above pop. %.1e / %.1e m³ / %.1e W - %s" % (res.population, res.shape.habVolume, res.habPower, res.coolingReport))
                     break
             for res in habitats:
-                if not res.isCompleteLighting:
-                    print("No complete lighting above %.1e m³ / %.1e W - %s" % (res.shape.habVolume, res.habPower, res.lightingReport))
+                if res.structure.coRotationalElectricFraction < 1:
+                    print("No complete co-rotation of PV above pop. %.1e / %.1e m³ / %.1e W" % (res.population, res.shape.habVolume, res.habPower))
                     break
             for res in habitats:
                 if res.structure.coRotationalLightFraction < 1:
-                    print("No complete co-rotation of mirrors above %.1e m³ / %.1e W" % (res.shape.habVolume, res.habPower))
+                    print("No complete co-rotation of mirrors above pop. %.1e / %.1e m³ / %.1e W" % (res.population, res.shape.habVolume, res.habPower))
+                    break
+
+            for res in habitats:
+                if not res.isCompleteLighting:
+                    print("No complete lighting above pop. %.1e / %.1e m³ / %.1e W - %s" % (res.population, res.shape.habVolume, res.habPower, res.lightingReport))
                     break
             for res in habitats:
                 if res.shape.rotationalRadius > res.structure.coRotationalRadius:
-                    print("Rotational radius surpasses critical co-rotational radius at %.1e m  %.1e m³ / %.1e W" % (res.shape.rotationalRadius, res.shape.habVolume, res.habPower))
+                    print("Rotational radius surpasses critical co-rotational radius at pop. %.1e / %.1e m  %.1e m³ / %.1e W" % (res.population, res.shape.rotationalRadius, res.shape.habVolume, res.habPower))
                     break
             for res in habitats:
-                if res.structure.totalStructuralMass > 0.1 * res.shape.interiorMass:
-                    print("Structural mass surpasses 0.1 of interior mass at %.1e m³ / %.1e W" % (res.shape.habVolume, res.habPower))
+                if res.totalCoolingMass > res.shape.interiorMass:
+                    print("Cooling mass surpasses the interior mass at pop. %.1e / %.1e m³ / %.1e W" % (res.population, res.shape.habVolume, res.habPower))
+                    break
+
+            for res in habitats:
+                if res.structure.totalStructuralMass > res.shape.hullMass:
+                    print("Structural mass surpasses hull mass at pop. %.1e / %.1e m³ / %.1e W" % (res.population, res.shape.habVolume, res.habPower))
                     break
             for res in habitats:
                 if res.structure.totalStructuralMass > res.shape.interiorMass:
-                    print("Structural mass surpasses the interior mass at %.1e m³ / %.1e W" % (res.shape.habVolume, res.habPower))
+                    print("Structural mass surpasses the interior mass at pop. %.1e / %.1e m³ / %.1e W" % (res.population, res.shape.habVolume, res.habPower))
                     break
             oldInteriorMassFraction = 0
             for res in habitats:
@@ -429,7 +450,7 @@ class Output:
                     break
                 else:
                     oldInteriorMassFraction = interiorMassFraction
-                    s = "Maximum interior mass fraction (%.3f) / minimum mass per volume at %.1e m³ / %.1e W" % (interiorMassFraction, res.shape.habVolume, res.habPower)
+                    s = "Maximum interior mass fraction (%.3f) / minimum mass per volume at pop. %.1e / %.1e m³ / %.1e W" % (interiorMassFraction, res.population, res.shape.habVolume, res.habPower)
 
     def plot_HullAndStructuralMasses(self):
         fig, ax = plt.subplots()
@@ -444,16 +465,23 @@ class Output:
             ax.plot(xvals, [hab.structure.totalStructuralMass / hab.shape.habVolume for hab in results], label="Structure " + self.inp.label[iRun], linestyle=":")
     
         ax.legend()
-     #   fig.savefig(inp.project + "\\HullAndStructuralMasses.pdf")
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\HullAndStructuralMasses.pdf")
 
     def showSketchForFirstPower(self, onlyFirstRun: bool):
         for iRun in range(self.inp.numberRuns):
             if onlyFirstRun and iRun > 0:
                 break
             hab = self.runResults[iRun][0]
-            Sketch(shape=hab.shape, corot_limit=hab.structure.coRotationalRadius,
+            sketch = Sketch(shape=hab.shape, corot_limit=hab.structure.coRotationalRadius,
                    light_radius=hab.lightRadius, collection_radius=hab.collectionRadius, emission_radius=hab.emission.emissionRadius,
-                   emission_length=hab.connection.emissionLength).show_habitat()
+                   emission_length=hab.connection.emissionLength)
+            sketch.title = self.inp.project
+            if self.inp.numberRuns > 1:
+                sketch.title = self.inp.label[iRun]
+            sketch.show_habitat()
+            if self.saveFigures:
+                sketch.fig.savefig(self.inp.project + "\\sketch3d_%s.pdf" % self.inp.label[iRun])
 
     def showGravityForFirstPower(self, normalizedToGravWidth: bool, onlyFirstRun: bool, withVolume: bool, withHull: bool):
         fig, ax = plt.subplots()
@@ -466,9 +494,8 @@ class Output:
         for iRun in range(self.inp.numberRuns):
             if onlyFirstRun and iRun > 0:
                 break
-            if onlyFirstRun:
-                labeladdition = ""
-            else:
+            labeladdition = ""
+            if not onlyFirstRun and self.inp.numberRuns > 1:
                 labeladdition = self.inp.label[iRun]
 
             hab = self.runResults[iRun][0]
@@ -482,7 +509,7 @@ class Output:
                 lstyle = '-'
             else:
                 widths = [1 for i in range(nbFloors)]
-                ax.set_ylabel("Distribution [fraction of total]")
+                ax.set_ylabel("Distribution [fraction of ground area]")
                 lstyle = '--'
 
             totalGround = sum(hab.gravity.groundAreas)
@@ -508,4 +535,8 @@ class Output:
                 ax.plot(xvals, yvals, label="Hull "+labeladdition, linestyle=lstyle, marker='v')
 
         ax.legend()
+        if self.saveFigures:
+            fig.savefig(self.inp.project + "\\gravity.pdf")
+
+
 
