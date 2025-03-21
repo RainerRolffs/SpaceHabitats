@@ -3,7 +3,7 @@ import math
 
 
 class LightCollection:
-    def __init__(self, inp: Input, lightPower, habRadius):
+    def __init__(self, inp: Input, lightPower, habRadius, crossSection):
         self.maxAngularDeviation = inp.concentrationFactor ** .5 * 7 / 1.5e3 / inp.solarDistance
         self.lightChannelSurface = lightPower / inp.surfaceIntensity
         self.lightAbsPower = self.lightChannelSurface * (1 - inp.innerReflectivity) \
@@ -25,4 +25,4 @@ class LightCollection:
         self.lightVolume = (lightPower + self.lightAbsPower) \
                            / (3 * inp.outerReflectivity * (1 - inp.windowReflectivity - inp.windowAbsorptivity)
                               * inp.concentrationFactor * inp.getIrradiation()) * habRadius
-        self.isUnconcentratedLightingPossible = (self.lightCollectionArea < math.pi * habRadius ** 2)
+        self.isUnconcentratedLightingPossible = (self.lightCollectionArea < crossSection)

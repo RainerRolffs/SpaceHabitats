@@ -25,6 +25,7 @@ class Absorption:
                 self.massFlow = (coolingPower + self.absorptionFrictionPower) / coolingHelper.internalEnergyChange
                 if self.absorptionFrictionPower > (inp.maxFrictionFraction - conFriction - emFriction) * coolingPower:
                     self.isCoolingPossible = False
+                    self.report = "Friction power in heat absorption (%.1e W) would surpass maximum fraction of habitat power" % self.absorptionFrictionPower
                     break
         else:
             self.absorptionReynolds = 8 * habRadius * self.massFlow / max(1e-10, self.absorptionSurface) / coolingHelper.viscosity

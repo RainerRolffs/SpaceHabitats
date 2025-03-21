@@ -4,6 +4,15 @@ import enum
 import math
 
 
+class ShapeType(enum.Enum):
+    Cylinder = 0
+    Tube = 1
+    Oblate = 2
+    Torus = 3
+    Dumbbell = 4
+    DumbbellTube = 5
+
+
 class CoolantType(enum.Enum):
     Liquid = 0
     Vapor = 1
@@ -53,16 +62,16 @@ class CoolingHelper:
                 self.absorptionSurfacePerPower = 1 / inp.absorptionTransferCoeff / maxTempDiffHabCoolant
     
 
-def LogRange(numberOfModels, minPower, maxPower):
+def LogRange(numberOfModels, minValue, maxValue):
     if numberOfModels == 1:
-        return [minPower]
-    dLog = (math.log(maxPower) - math.log(minPower)) / (numberOfModels - 1)
-    logPower = math.log(minPower)
-    powers = []
+        return [minValue]
+    dLog = (math.log(maxValue) - math.log(minValue)) / (numberOfModels - 1)
+    logValue = math.log(minValue)
+    values = []
     for i in range(numberOfModels):
-        powers.append(math.exp(logPower))
-        logPower += dLog
-    return powers
+        values.append(math.exp(logValue))
+        logValue += dLog
+    return values
 
 
 def frictionFactor(reynolds, minFrictionFactor):
@@ -72,5 +81,6 @@ def frictionFactor(reynolds, minFrictionFactor):
         return 64 / reynolds
     else:
         return max(minFrictionFactor, 0.3164 * reynolds ** (-1 / 4))
+
 
 
