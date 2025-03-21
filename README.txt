@@ -1,6 +1,6 @@
 A Physical Model of Energy Flow and Rotation in Space Habitats by Rainer Rolffs
 
-Accompanying paper published in the NSS Space Settlement Journal, https://space.nss.org/wp-content/uploads/NSS-JOURNAL-Energy-Flow-in-Space-Habitats.pdf
+Accompanying papers published in the NSS Space Settlement Journal, https://space.nss.org/wp-content/uploads/NSS-JOURNAL-Energy-Flow-in-Space-Habitats.pdf and https://space.nss.org/wp-content/uploads/NSS-JOURNAL-Rotation-of-Space-Habitats.pdf
 
 Code available in https://github.com/RainerRolffs/SpaceHabitats
 
